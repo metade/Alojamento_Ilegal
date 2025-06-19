@@ -1,3 +1,5 @@
+require_relative "al_ilegal/data"
+
 module AlIlegal
   def self.parse_al_license(string)
     return $1 if string =~ /(\d+)(\/| |_|-|\\|&)*al/i
@@ -22,6 +24,7 @@ module AlIlegal
       end
     end
   end
+
 
   def self.stats(data, header = "")
     puts "#{data.size} listagens de AirBnb"

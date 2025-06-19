@@ -4,6 +4,8 @@ require 'active_support/core_ext/object/blank'
 require 'haversine'
 require_relative "lib/al_ilegal"
 
+AlIlegal::Data.prepare!
+
 license_counts = Hash.new(0)
 CSV.foreach("data_sources/listings.csv", headers: true) do |row|
   license = AlIlegal.parse_al_license(row["license"])
