@@ -15,181 +15,184 @@
 bundle
 bundle exec ruby run_me.rb
 
-2025-06-19
-16702 listagens de AirBnb
-6727 com licença AL válida
-5293 sem licença
-4336 em que a licença AL foi reutilizada
-1027 em que a licença AL é numa outra localidade
+Ultimas actualizações:
+{:airbnb=>"2025-10-08", :turismo_portugal=>"2025-08-26"}
+
+
+17428 listagens de AirBnb
+6661 com licença AL válida
+5750 com licença não reconhecida (669 sem licença, 3698 isentos(?), 1383 não reconhecidos)
+4645 em que a licença AL foi reutilizada
+1121 em que a licença AL é numa outra localidade
 
 
 **** Ajuda
-224 listagens de AirBnb
-97 com licença AL válida
-50 sem licença
-72 em que a licença AL foi reutilizada
-20 em que a licença AL é numa outra localidade
+241 listagens de AirBnb
+110 com licença AL válida
+59 com licença não reconhecida (7 sem licença, 38 isentos(?), 14 não reconhecidos)
+62 em que a licença AL foi reutilizada
+16 em que a licença AL é numa outra localidade
 
 **** Alcntara
-301 listagens de AirBnb
+320 listagens de AirBnb
 127 com licença AL válida
-100 sem licença
-66 em que a licença AL foi reutilizada
-18 em que a licença AL é numa outra localidade
+107 com licença não reconhecida (12 sem licença, 83 isentos(?), 12 não reconhecidos)
+76 em que a licença AL foi reutilizada
+25 em que a licença AL é numa outra localidade
 
 **** Alvalade
-315 listagens de AirBnb
-71 com licença AL válida
-169 sem licença
-67 em que a licença AL foi reutilizada
-34 em que a licença AL é numa outra localidade
+360 listagens de AirBnb
+63 com licença AL válida
+213 com licença não reconhecida (20 sem licença, 153 isentos(?), 40 não reconhecidos)
+77 em que a licença AL foi reutilizada
+35 em que a licença AL é numa outra localidade
 
 **** Areeiro
-380 listagens de AirBnb
-56 com licença AL válida
-165 sem licença
-150 em que a licença AL foi reutilizada
-34 em que a licença AL é numa outra localidade
+447 listagens de AirBnb
+58 com licença AL válida
+189 com licença não reconhecida (8 sem licença, 142 isentos(?), 39 não reconhecidos)
+192 em que a licença AL foi reutilizada
+42 em que a licença AL é numa outra localidade
 
 **** Arroios
-2138 listagens de AirBnb
-615 com licença AL válida
-675 sem licença
-793 em que a licença AL foi reutilizada
-180 em que a licença AL é numa outra localidade
+2234 listagens de AirBnb
+616 com licença AL válida
+734 com licença não reconhecida (107 sem licença, 430 isentos(?), 197 não reconhecidos)
+831 em que a licença AL foi reutilizada
+172 em que a licença AL é numa outra localidade
 
 **** Avenidas Novas
-769 listagens de AirBnb
-153 com licença AL válida
-321 sem licença
-285 em que a licença AL foi reutilizada
-26 em que a licença AL é numa outra localidade
+884 listagens de AirBnb
+145 com licença AL válida
+416 com licença não reconhecida (24 sem licença, 329 isentos(?), 63 não reconhecidos)
+306 em que a licença AL foi reutilizada
+50 em que a licença AL é numa outra localidade
 
 **** Beato
-131 listagens de AirBnb
-50 com licença AL válida
-35 sem licença
-40 em que a licença AL foi reutilizada
-11 em que a licença AL é numa outra localidade
+134 listagens de AirBnb
+48 com licença AL válida
+41 com licença não reconhecida (4 sem licença, 33 isentos(?), 4 não reconhecidos)
+38 em que a licença AL foi reutilizada
+10 em que a licença AL é numa outra localidade
 
 **** Belm
-307 listagens de AirBnb
-126 com licença AL válida
-109 sem licença
-64 em que a licença AL foi reutilizada
-12 em que a licença AL é numa outra localidade
+293 listagens de AirBnb
+118 com licença AL válida
+99 com licença não reconhecida (18 sem licença, 63 isentos(?), 18 não reconhecidos)
+70 em que a licença AL foi reutilizada
+11 em que a licença AL é numa outra localidade
 
 **** Benfica
-83 listagens de AirBnb
-24 com licença AL válida
-49 sem licença
-6 em que a licença AL foi reutilizada
+101 listagens de AirBnb
+23 com licença AL válida
+60 com licença não reconhecida (2 sem licença, 49 isentos(?), 9 não reconhecidos)
+13 em que a licença AL foi reutilizada
 10 em que a licença AL é numa outra localidade
 
 **** Campo de Ourique
-460 listagens de AirBnb
-161 com licença AL válida
-201 sem licença
-95 em que a licença AL foi reutilizada
-32 em que a licença AL é numa outra localidade
+467 listagens de AirBnb
+160 com licença AL válida
+203 com licença não reconhecida (26 sem licença, 152 isentos(?), 25 não reconhecidos)
+98 em que a licença AL foi reutilizada
+31 em que a licença AL é numa outra localidade
 
 **** Campolide
-270 listagens de AirBnb
-64 com licença AL válida
-109 sem licença
-90 em que a licença AL foi reutilizada
+299 listagens de AirBnb
+61 com licença AL válida
+116 com licença não reconhecida (6 sem licença, 68 isentos(?), 42 não reconhecidos)
+112 em que a licença AL foi reutilizada
 18 em que a licença AL é numa outra localidade
 
 **** Carnide
-42 listagens de AirBnb
-19 com licença AL válida
-15 sem licença
-8 em que a licença AL foi reutilizada
-1 em que a licença AL é numa outra localidade
+35 listagens de AirBnb
+20 com licença AL válida
+11 com licença não reconhecida (0 sem licença, 6 isentos(?), 5 não reconhecidos)
+4 em que a licença AL foi reutilizada
+0 em que a licença AL é numa outra localidade
 
 **** Estrela
-1001 listagens de AirBnb
-441 com licença AL válida
-330 sem licença
-209 em que a licença AL foi reutilizada
-49 em que a licença AL é numa outra localidade
+1027 listagens de AirBnb
+437 com licença AL válida
+337 com licença não reconhecida (29 sem licença, 192 isentos(?), 116 não reconhecidos)
+228 em que a licença AL foi reutilizada
+53 em que a licença AL é numa outra localidade
 
 **** Lumiar
-152 listagens de AirBnb
-42 com licença AL válida
-91 sem licença
-17 em que a licença AL foi reutilizada
-8 em que a licença AL é numa outra localidade
+140 listagens de AirBnb
+43 com licença AL válida
+77 com licença não reconhecida (8 sem licença, 57 isentos(?), 12 não reconhecidos)
+18 em que a licença AL foi reutilizada
+9 em que a licença AL é numa outra localidade
 
 **** Marvila
-151 listagens de AirBnb
-46 com licença AL válida
-65 sem licença
-33 em que a licença AL foi reutilizada
-19 em que a licença AL é numa outra localidade
+140 listagens de AirBnb
+40 com licença AL válida
+66 com licença não reconhecida (5 sem licença, 50 isentos(?), 11 não reconhecidos)
+24 em que a licença AL foi reutilizada
+14 em que a licença AL é numa outra localidade
 
 **** Misericrdia
-2478 listagens de AirBnb
-1238 com licença AL válida
-594 sem licença
-607 em que a licença AL foi reutilizada
-111 em que a licença AL é numa outra localidade
+2630 listagens de AirBnb
+1247 com licença AL válida
+690 com licença não reconhecida (125 sem licença, 357 isentos(?), 208 não reconhecidos)
+654 em que a licença AL foi reutilizada
+144 em que a licença AL é numa outra localidade
 
 **** Olivais
-227 listagens de AirBnb
-66 com licença AL válida
-105 sem licença
-53 em que a licença AL foi reutilizada
-10 em que a licença AL é numa outra localidade
+221 listagens de AirBnb
+56 com licença AL válida
+113 com licença não reconhecida (10 sem licença, 85 isentos(?), 18 não reconhecidos)
+49 em que a licença AL foi reutilizada
+9 em que a licença AL é numa outra localidade
 
 **** Parque das Naes
-342 listagens de AirBnb
+338 listagens de AirBnb
 109 com licença AL válida
-187 sem licença
-36 em que a licença AL foi reutilizada
-26 em que a licença AL é numa outra localidade
+176 com licença não reconhecida (20 sem licença, 123 isentos(?), 33 não reconhecidos)
+40 em que a licença AL foi reutilizada
+30 em que a licença AL é numa outra localidade
 
 **** Penha de Frana
-603 listagens de AirBnb
-174 com licença AL válida
-231 sem licença
-178 em que a licença AL foi reutilizada
-53 em que a licença AL é numa outra localidade
+618 listagens de AirBnb
+173 com licença AL válida
+240 com licença não reconhecida (20 sem licença, 160 isentos(?), 60 não reconhecidos)
+186 em que a licença AL foi reutilizada
+60 em que a licença AL é numa outra localidade
 
 **** Santa Clara
 37 listagens de AirBnb
-1 com licença AL válida
-27 sem licença
-7 em que a licença AL foi reutilizada
-5 em que a licença AL é numa outra localidade
+3 com licença AL válida
+30 com licença não reconhecida (2 sem licença, 26 isentos(?), 2 não reconhecidos)
+3 em que a licença AL foi reutilizada
+4 em que a licença AL é numa outra localidade
 
 **** Santa Maria Maior
-3407 listagens de AirBnb
-1861 com licença AL válida
-680 sem licença
-809 em que a licença AL foi reutilizada
-163 em que a licença AL é numa outra localidade
+3482 listagens de AirBnb
+1835 com licença AL válida
+708 com licença não reconhecida (118 sem licença, 401 isentos(?), 189 não reconhecidos)
+876 em que a licença AL foi reutilizada
+180 em que a licença AL é numa outra localidade
 
 **** Santo Antnio
-1466 listagens de AirBnb
-504 com licença AL válida
-556 sem licença
-380 em que a licença AL foi reutilizada
-115 em que a licença AL é numa outra localidade
+1545 listagens de AirBnb
+505 com licença AL válida
+608 com licença não reconhecida (47 sem licença, 424 isentos(?), 137 não reconhecidos)
+409 em que a licença AL foi reutilizada
+122 em que a licença AL é numa outra localidade
 
 **** So Domingos de Benfica
-179 listagens de AirBnb
-55 com licença AL válida
-98 sem licença
-22 em que a licença AL foi reutilizada
-11 em que a licença AL é numa outra localidade
+172 listagens de AirBnb
+52 com licença AL válida
+93 com licença não reconhecida (9 sem licença, 61 isentos(?), 23 não reconhecidos)
+24 em que a licença AL foi reutilizada
+10 em que a licença AL é numa outra localidade
 
 **** So Vicente
-1239 listagens de AirBnb
-627 com licença AL válida
-331 sem licença
-249 em que a licença AL foi reutilizada
-61 em que a licença AL é numa outra localidade
+1263 listagens de AirBnb
+612 com licença AL válida
+364 com licença não reconhecida (42 sem licença, 216 isentos(?), 106 não reconhecidos)
+255 em que a licença AL foi reutilizada
+66 em que a licença AL é numa outra localidade
 ```
 
 Dados postos em:
