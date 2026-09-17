@@ -3,10 +3,23 @@ require "fileutils"
 
 module AlIlegal
   def self.parse_al_license(string)
-    return $1 if string =~ /(\d+)(\/| |_|-|\\|&)*al/i
-    return $2 if string =~ /al(\/| |_|-|\\|&)*(\d+)/i
-    return string if /\A\d+\z/.match?(string)
-    string if /(\d+)\/20[12]\d/.match?(string)
+    value = string.to_s.strip
+
+    if value =~ /\A0*(\d+)(\/|\s|_|-|\\|&)*al\.?\z/i
+      return $1.to_i.to_s
+    end
+
+    if value =~ /\Aal(\/|\s|_|-|\\|&)*0*(\d+)\z/i
+      return $2.to_i.to_s
+    end
+
+    return value.to_i.to_s if /\A0*\d+\z/.match?(value)
+
+    if value =~ /\A0*(\d+)\s*\/\s*20[12]\d\z/
+      return $1.to_i.to_s
+    end
+
+    nil
   end
 
   def self.parse_lat_long(string)
