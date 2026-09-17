@@ -1,6 +1,26 @@
-##
+# Alojamento Ilegal
 
+An analysis of Lisbon Airbnb listings against Portugal’s official local-accommodation register.
 
+The project compares listing licence values, official registration records, and approximate locations. It also distinguishes likely multi-room or multi-unit establishments from possible reuse of the same licence across distinct locations.
+
+## Quick start
+
+```bash
+bundle install
+bundle exec ruby run_me.rb
+```
+
+The script prints overall and per-freguesia statistics and writes the detailed output to [`data_sources/data_transformed/result.csv`](data_sources/data_transformed/result.csv).
+
+Run the tests with:
+
+```bash
+ruby -Itest test/al_ilegal_test.rb
+ruby -Itest test/spatial_clusters_test.rb
+```
+
+For project-specific working instructions and interpretation notes, see [`AGENTS.md`](AGENTS.md).
 
 ## Dados
 
