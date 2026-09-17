@@ -42,15 +42,46 @@ data = CSV.foreach(airbnb_path, headers: true).map do |row|
     license_status: license_status,
     url: row["listing_url"],
     bairro: row["neighbourhood_cleansed"],
+    nome: row["name"],
     lat: row["latitude"],
     lng: row["longitude"],
+    room_type: row["room_type"],
+    property_type: row["property_type"],
     quartos: row["bedrooms"],
     host_id: row["host_id"],
     airbnb_date: Date.parse(row["last_scraped"]),
-    official_date: official_record ? Date.parse(official_record["DataRegisto"]) : nil
+    official_date: official_record ? Date.parse(official_record["DataRegisto"]) : nil,
+    official_name: official_record && official_record["Denominacao"],
+    official_address: official_record && official_record["Endereco"],
+    official_concelho: official_record && official_record["Concelho"],
+    official_modalidade: official_record && official_record["Modalidade"],
+    official_capacity: official_record && official_record["NrUtentes"]
   }
 end
 data.compact!
+
+# Classify repeated licence numbers without collapsing the original listings.
+data.group_by { |listing| listing[:licensa] }.each do |license, listings|
+  next if license.to_s.empty?
+
+  clusters = AlIlegal.spatial_clusters(listings)
+  assessment = AlIlegal.license_group_assessment(listings, licensed_als[license])
+  listings.each do |listing|
+    listing[:spatial_cluster_count] = clusters.size
+    listing[:license_group_assessment] = assessment
+  end
+end
+
+data.each do |listing|
+  listing[:spatial_cluster_count] ||= 1
+  listing[:license_group_assessment] ||= "sem licença identificável"
+end
+
+puts "\n\nClassificação dos grupos de licenças:"
+data.group_by { |listing| listing[:license_group_assessment] }.sort_by { |assessment, _| assessment }.each do |assessment, listings|
+  groups = listings.map { |listing| listing[:licensa] }.reject { |license| license.to_s.empty? }.uniq.size
+  puts "#{assessment}: #{listings.size} anúncios (#{groups} licenças)"
+end
 
 dates = {
   airbnb: data.map { |h| h[:airbnb_date] }.max.to_s,
@@ -63,7 +94,7 @@ puts "Ultimas actualizações:"
 pp dates
 puts "\n\n"
 
-AlIlegal.stats(data)
+AlIlegal.stats(data, include_establishment_estimate: true)
 puts "\n\n"
 
 neighbourhoods = Set.new
