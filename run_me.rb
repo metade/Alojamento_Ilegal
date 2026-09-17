@@ -4,24 +4,25 @@ require "active_support/core_ext/object/blank"
 require "haversine"
 require_relative "lib/al_ilegal"
 
-AlIlegal::Data.prepare!
+airbnb_path, official_path = AlIlegal::Data.prepare!
+licensed_als = AlIlegal.licensed_als(official_path)
 
 license_counts = Hash.new(0)
-CSV.foreach("data_sources/listings.csv", headers: true) do |row|
+CSV.foreach(airbnb_path, headers: true) do |row|
   license = AlIlegal.parse_al_license(row["license"])
   license_counts[license] += 1
 end
 
-data = CSV.foreach("data_sources/listings.csv", headers: true).map do |row|
+data = CSV.foreach(airbnb_path, headers: true).map do |row|
   next if !row["neighbourhood_group_cleansed"].blank? && row["neighbourhood_group_cleansed"] != "Lisboa"
 
   license = AlIlegal.parse_al_license(row["license"])
-  official_record = AlIlegal.licensed_als[license]
+  official_record = licensed_als[license]
 
   license_status = if official_record.nil?
     "sem licença"
   elsif official_record.present?
-    official_lat, official_lng = official_record["LatLong"].tr(",", ".").split(" ; ")
+    official_lat, official_lng = AlIlegal.parse_lat_long(official_record["LatLong"])
     distance_km = Haversine.distance(
       official_lat.to_f, official_lng.to_f,
       row["latitude"].to_f, row["longitude"].to_f

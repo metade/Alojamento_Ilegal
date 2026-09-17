@@ -9,17 +9,25 @@ module AlIlegal
     string if /(\d+)\/20[12]\d/.match?(string)
   end
 
-  def self.licensed_als
-    @licensed_als ||= if File.exist?("tmp/licensed_als.json")
-      JSON.parse(File.read("tmp/licensed_als.json"))
+  def self.parse_lat_long(string)
+    coordinates = string.to_s.split(/\s*;\s*/)
+    raise ArgumentError, "Invalid LatLong value: #{string.inspect}" unless coordinates.size == 2
+
+    coordinates.map { |coordinate| Float(coordinate.tr(",", ".")) }
+  end
+
+  def self.licensed_als(source_path = "data_sources/Estabelecimentos_de_Alojamento_Local.csv")
+    cache_path = "tmp/licensed_als-#{File.basename(source_path, ".csv")}.json"
+    @licensed_als ||= if File.exist?(cache_path)
+      JSON.parse(File.read(cache_path))
     else
       valid_licenses = {}
-      CSV.foreach("data_sources/Estabelecimentos_de_Alojamento_Local.csv", headers: true) do |row|
+      CSV.foreach(source_path, headers: true) do |row|
         license = row["NrRNAL"]
         valid_licenses[license] = row.to_h
       end
       FileUtils.mkdir_p("tmp")
-      File.write("tmp/licensed_als.json", JSON.pretty_generate(valid_licenses))
+      File.write(cache_path, JSON.pretty_generate(valid_licenses))
 
       valid_licenses
     end
