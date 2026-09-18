@@ -45,20 +45,24 @@ Critério de conclusão: cumprido. Uma execução nova produz apenas ficheiros a
 
 Nota: a auditoria do histórico Git fica deliberadamente para a Sessão 2; a conclusão desta sessão refere-se aos ficheiros atualmente presentes na árvore de trabalho.
 
-## Sessão 2 — Auditar o histórico Git ⚠️ parcialmente concluída (2026-09-18)
+## Sessão 2 — Auditar o histórico Git ✅ concluída localmente (2026-09-18)
 
 Objetivo: confirmar que dados pessoais anteriormente commitados não continuam acessíveis no histórico.
 
-Resultado da auditoria:
+Resultado da auditoria e limpeza local:
 
 - O histórico alcançável foi pesquisado em `main` e `origin/main`.
 - Foram encontrados dados detalhados em commits anteriores, incluindo o ficheiro `data_sources/data_transformed/result.csv`, `host_id`, coordenadas e strings de licença brutas.
 - O remoto configurado é `git@github.com:metade/Alojamento_Ilegal.git`; por isso, o histórico foi tratado como potencialmente partilhado.
 - O ficheiro detalhado foi removido do índice atual, preservando a cópia local ignorada.
+- A história local foi reescrita para remover o ficheiro detalhado de todos os commits e o snapshot pré-sanitização.
+- Foi criada uma cópia de segurança em `/private/tmp/Alojamento_Ilegal-before-history-rewrite.bundle` antes da reescrita.
 - `scripts/audit_publication.rb --history` reproduz a auditoria sem imprimir valores pessoais.
 - `.github/workflows/publication-audit.yml` impede a reintrodução de ficheiros locais/detalhados ou campos proibidos nos outputs publicáveis.
 
-Tarefas pendentes:
+Nota sobre o remoto:
+
+- O remoto GitHub ainda aponta para a história anterior; será necessário um force-push coordenado para publicar a história limpa.
 
 - Pesquisar todos os commits, branches e tags por:
   - `host_id`;
@@ -69,12 +73,12 @@ Tarefas pendentes:
   - `result.csv`;
   - strings de licença brutas.
 - Confirmar se o repositório já foi partilhado com terceiros.
-- Se o histórico ainda for privado e descartável, reescrevê-lo para remover os ficheiros sensíveis.
-- Fazer uma cópia de segurança antes de qualquer reescrita.
-- Se o histórico já tiver sido partilhado, considerar um repositório público novo e limpo em vez de reescrever o existente.
+- [x] Se o histórico ainda for privado e descartável, reescrevê-lo para remover os ficheiros sensíveis.
+- [x] Fazer uma cópia de segurança antes de qualquer reescrita.
+- [x] Avaliar o risco do histórico partilhado; a publicação da história limpa requer force-push coordenado ou um repositório público novo.
 - [x] Acrescentar uma verificação CI que impeça a reintrodução desses dados.
 
-Critério de conclusão: não cumprido no histórico atual. Como o repositório tem um remoto GitHub, a limpeza exige autorização explícita para reescrever a história ou a criação de um repositório público novo e limpo.
+Critério de conclusão local: cumprido. `ruby scripts/audit_publication.rb --history` termina com sucesso para todos os refs locais alcançáveis.
 
 ## Sessão 3 — Modos público e local
 
