@@ -20,17 +20,20 @@ Run the analysis:
 bundle exec ruby run_me.rb
 ```
 
-The script downloads missing source snapshots, prints overall and per-freguesia statistics, classifies repeated licence groups, and writes:
+The script downloads missing public source snapshots and creates an immutable run under:
 
 ```text
-data_sources/data_transformed/result.csv
+data/snapshots/<airbnb-snapshot-date>__<official-download-date>/
 ```
+
+Each run contains `metadata.json`, `summary.json`, `listings.csv`, `licence_groups.csv`, `freguesias.csv`, and `report.html`. Set `GENERATE_PDF=1` to create the optional PDF derivative when `wkhtmltopdf` or `weasyprint` is installed. Historical summary rows are appended to `data/history/summary.csv`; an existing run ID must never be overwritten.
 
 Run tests:
 
 ```bash
 ruby -Itest test/al_ilegal_test.rb
 ruby -Itest test/spatial_clusters_test.rb
+ruby -Itest test/versioned_analysis_test.rb
 ```
 
 Ruby syntax checks:
@@ -43,11 +46,17 @@ ruby -c lib/al_ilegal/data.rb
 
 ## Data and reproducibility
 
-Raw data under `data_sources/*.csv` and cached files under `tmp/` are intentionally ignored by Git. The Airbnb snapshot date is configured in `lib/al_ilegal/data.rb`; update it only after verifying the corresponding public Inside Airbnb archive URL.
+Raw data under `data_sources/*.csv` and cached files under `tmp/` are intentionally ignored by Git. Transformed, versioned outputs under `data/snapshots/` and `data/history/` are publishable project outputs and may be committed. Do not commit large raw upstream datasets.
 
-The official register is downloaded with the current date in its filename. The analysis uses the dated file returned by the downloader, not an older undated copy.
+The GitHub Actions workflow in `.github/workflows/quarterly-analysis.yml` runs quarterly or through `workflow_dispatch`, tests before analysis, generates reports, commits permanent outputs, and uploads temporary debugging artifacts.
+
+The Airbnb snapshot date is configured in `lib/al_ilegal/data.rb`; update it only after verifying the corresponding public Inside Airbnb archive URL. The run ID uses the date in the source filename when available, rather than assuming that the maximum listing-level `last_scraped` date is the archive date.
+
+The official register is downloaded with the current date in its filename. The analysis uses the dated file returned by the downloader, not an older undated copy. `metadata.json` records source URLs, source dates, SHA-256 hashes, Git commit, analysis version, methodology version, and output schema version.
 
 Airbnb `last_scraped` values are listing-level collection dates and may span several days. They are not necessarily the same as the archive snapshot date.
+
+Historical comparisons are generated only for metrics with the same methodology version. When the methodology changes, old outputs remain untouched and comparisons are marked incompatible.
 
 ## Matching and classification
 
@@ -71,4 +80,5 @@ The establishment-level figure printed by the script is an analytical estimate. 
 - Add regression tests for new licence formats and spatial rules.
 - Do not describe unmatched or geographically inconsistent listings as illegal without official validation.
 - Do not commit raw downloaded datasets unless explicitly requested.
-- The PDF and Markdown report are working publication artefacts and should be updated separately from code/data commits.
+- Treat `report.html` as the canonical self-contained report and `report.pdf` as a derivative.
+- Do not recreate or maintain the removed legacy `relatorio_anomalias_al.*` files; new reports belong inside their versioned run directory.
