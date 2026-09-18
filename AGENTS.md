@@ -50,6 +50,8 @@ Raw data under `data_sources/**/*.csv`, detailed local results under `data/priva
 
 The GitHub Actions workflow in `.github/workflows/quarterly-analysis.yml` runs quarterly or through `workflow_dispatch`, tests before analysis, generates reports, commits permanent outputs, and uploads temporary debugging artifacts.
 
+Before committing changes to `data/snapshots/`, `data/history/`, or publication workflows, run `ruby scripts/audit_publication.rb`. Run `ruby scripts/audit_publication.rb --history` when auditing repository history. A history rewrite requires a recoverable Git backup and coordinated approval before force-pushing.
+
 The Airbnb snapshot is discovered from the public Inside Airbnb data page at runtime. `latest_airbnb_snapshot` must select the latest Lisbon `listings.csv.gz` entry and fail clearly if the page format changes. The run ID uses the date in the source filename, rather than assuming that the maximum listing-level `last_scraped` date is the archive date.
 
 The official register is downloaded with the current date in its filename. The analysis uses the dated file returned by the downloader, not an older undated copy. `metadata.json` records source URLs, source dates, SHA-256 hashes, Git commit, analysis version, methodology version, and output schema version.

@@ -38,9 +38,20 @@ ruby -Itest test/spatial_clusters_test.rb
 ruby -Itest test/versioned_analysis_test.rb
 ```
 
+Antes de publicar ou rever alterações aos outputs, execute a auditoria de publicação:
+
+```bash
+ruby scripts/audit_publication.rb
+ruby scripts/audit_publication.rb --history
+```
+
+O primeiro comando verifica os ficheiros publicáveis na árvore atual; o segundo verifica todos os commits e refs alcançáveis.
+
 ## GitHub Actions
 
 `.github/workflows/quarterly-analysis.yml` permite execução trimestral e manual. O workflow executa os testes, descarrega as fontes, gera os relatórios, publica os outputs versionados no repositório e guarda artefactos temporários para debugging.
+
+`.github/workflows/publication-audit.yml` executa automaticamente a verificação de segurança dos outputs em pushes e pull requests.
 
 Os artefactos do GitHub Actions têm retenção limitada; os snapshots commitados em `data/snapshots/` e o histórico em `data/history/` são a fonte permanente do projeto. Datasets brutos em `data_sources/`, resultados detalhados em `data/private/` e caches em `tmp/` continuam fora do Git por defeito. Os CSVs dos snapshots são agregados e não contêm identificadores de anúncios, anfitriões, nomes, endereços, coordenadas ou valores de licença individuais.
 
