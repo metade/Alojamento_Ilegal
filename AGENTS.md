@@ -50,7 +50,7 @@ Raw data under `data_sources/*.csv` and cached files under `tmp/` are intentiona
 
 The GitHub Actions workflow in `.github/workflows/quarterly-analysis.yml` runs quarterly or through `workflow_dispatch`, tests before analysis, generates reports, commits permanent outputs, and uploads temporary debugging artifacts.
 
-The Airbnb snapshot date is configured in `lib/al_ilegal/data.rb`; update it only after verifying the corresponding public Inside Airbnb archive URL. The run ID uses the date in the source filename when available, rather than assuming that the maximum listing-level `last_scraped` date is the archive date.
+The Airbnb snapshot is discovered from the public Inside Airbnb data page at runtime. `latest_airbnb_snapshot` must select the latest Lisbon `listings.csv.gz` entry and fail clearly if the page format changes. The run ID uses the date in the source filename, rather than assuming that the maximum listing-level `last_scraped` date is the archive date.
 
 The official register is downloaded with the current date in its filename. The analysis uses the dated file returned by the downloader, not an older undated copy. `metadata.json` records source URLs, source dates, SHA-256 hashes, Git commit, analysis version, methodology version, and output schema version.
 

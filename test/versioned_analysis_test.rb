@@ -26,4 +26,14 @@ class VersionedAnalysisTest < Minitest::Test
       assert_raises(RuntimeError) { AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv")) }
     end
   end
+
+  def test_discovers_latest_lisbon_snapshot_from_inside_airbnb_page
+    page = <<~HTML
+      <h3>Lisbon, Lisbon, Portugal</h3>
+      <h4>23 June, 2026 (<a href="https://insideairbnb.com/explore">Explore</a>)</h4>
+      <a href="https://data.insideairbnb.com/portugal/lisbon/lisbon/2026-06-23/data/listings.csv.gz">listings.csv.gz</a>
+    HTML
+
+    assert_equal ["2026-06-23", "https://data.insideairbnb.com/portugal/lisbon/lisbon/2026-06-23/data/listings.csv.gz"], AlIlegal::Data.latest_airbnb_snapshot(page)
+  end
 end

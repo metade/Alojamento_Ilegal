@@ -6,9 +6,10 @@ require "json"
 
 module AlIlegal
   module Data
+    AIRBNB_DATA_PAGE = "https://insideairbnb.com/get-the-data/"
     OFFICIAL_URL = "https://hub.arcgis.com/api/download/v1/items/4e62eb1977564991bd01e61d7aa8266f/csv?redirect=false&layers=6"
 
-    def self.airbnb_url(date = "2026-06-23")
+    def self.airbnb_url(date)
       "https://data.insideairbnb.com/portugal/lisbon/lisbon/#{date}/data/listings.csv.gz"
     end
 
@@ -34,13 +35,11 @@ module AlIlegal
     end
 
     def self.prepare_airbnb!
-      date = "2026-06-23"
+      date, airbnb_data_url = latest_airbnb_snapshot
       path = "data_sources/listings-#{date}.csv"
-      puts "Using Airbnb date from #{date} - check if there's a more up to date version here: https://insideairbnb.com/get-the-data/"
+      puts "Using latest available Airbnb snapshot from #{date}: #{airbnb_data_url}"
       return path if File.exist?(path)
       puts "  ... downloading airbnb data"
-
-      airbnb_data_url = airbnb_url(date)
 
       URI.open(airbnb_data_url) do |remote_file|
         Zlib::GzipReader.wrap(remote_file) do |gz|
@@ -49,6 +48,21 @@ module AlIlegal
       end
 
       path
+    end
+
+    def self.latest_airbnb_snapshot(page = nil)
+      page ||= URI.open(AIRBNB_DATA_PAGE).read
+      lisbon_section = page[/<h3[^>]*>\s*Lisbon.*?<\/h3>(.*?)(?=<h3|\z)/mi, 1]
+      raise "Could not find Lisbon on the Inside Airbnb data page" unless lisbon_section
+
+      date_text = lisbon_section[/<h4[^>]*>\s*([^<]+?)\s*\(/mi, 1]
+      date = Date.parse(date_text.to_s)
+      link = lisbon_section[/href=["']([^"']*listings\.csv\.gz)["']/i, 1]
+      raise "Could not find Lisbon listings.csv.gz on the Inside Airbnb data page" unless link
+
+      [date.to_s, link]
+    rescue ArgumentError
+      raise "Could not parse the Lisbon snapshot date from the Inside Airbnb data page"
     end
   end
 end

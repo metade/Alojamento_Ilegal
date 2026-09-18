@@ -46,7 +46,7 @@ Os artefactos do GitHub Actions têm retenção limitada; os snapshots commitado
 
 ## Dados e método
 
-As fontes são o arquivo público [Inside Airbnb](https://insideairbnb.com/get-the-data/) e o registo oficial disponibilizado pelo Turismo de Portugal. A data do snapshot Airbnb vem do nome do ficheiro quando disponível; `last_scraped` é uma data ao nível do anúncio e pode abranger vários dias.
+As fontes são o arquivo público [Inside Airbnb](https://insideairbnb.com/get-the-data/) e o registo oficial disponibilizado pelo Turismo de Portugal. Em cada execução, o downloader descobre na página do Inside Airbnb o snapshot mais recente disponível para Lisboa; `last_scraped` é uma data ao nível do anúncio e pode abranger vários dias.
 
 As licenças são normalizadas de forma conservadora. O analisador distingue, entre outras categorias:
 
