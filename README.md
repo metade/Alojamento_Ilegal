@@ -15,6 +15,14 @@ Por defeito, a execução é local e cria um run imutável detalhado em:
 data/private/<airbnb-snapshot-date>__<official-download-date>/
 ```
 
+Runs locais são imutáveis. Durante o desenvolvimento, `--force` preserva o run existente e cria um novo diretório local com sufixo `__rerun-<timestamp>`:
+
+```bash
+bundle exec ruby run_me.rb --force
+```
+
+Esta opção só está disponível no modo local e não substitui nem remove resultados anteriores.
+
 Os resultados locais incluem diagnósticos como `host_id`, coordenadas e valores de licença originais e permanecem fora do Git. Para gerar os outputs agregados publicáveis, selecione explicitamente o modo público:
 
 ```bash
@@ -81,5 +89,11 @@ As licenças são normalizadas de forma conservadora. O analisador distingue, en
 - ausência de licença identificável.
 
 `host_id` pode ser usado apenas durante a análise local como metadado, nunca como critério de agrupamento; não é escrito nos outputs públicos. A estimativa de estabelecimentos colapsa apenas categorias de menor risco e mantém casos de reutilização suspeita separados.
+
+### Exemplos de sinais
+
+O relatório inclui uma secção de exemplos ilustrativos, baseada em padrões sintéticos dos testes, para explicar a leitura das classificações sem expor casos individuais. Abrange ausência de licença identificável, possíveis anúncios múltiplos do mesmo estabelecimento, repetição de licença em localizações distintas, registo oficial fora de Lisboa e possível divergência de localização.
+
+Estes exemplos não contêm números reais de licença, nomes, IDs, URLs, endereços, coordenadas ou distâncias exatas. Os resultados publicados são agregados ao nível de freguesia/classificação e devem ser tratados como indicadores para verificação, nunca como conclusões legais.
 
 Para instruções de manutenção e interpretação, consulte [`AGENTS.md`](AGENTS.md).

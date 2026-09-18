@@ -35,7 +35,37 @@ class VersionedAnalysisTest < Minitest::Test
       refute metadata.to_s.match?(/host_id|listing_url|licensa_raw|latitude|longitude|official_address/i)
       refute metadata.to_s.include?("path")
       assert_equal "3.0.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
+      report = File.read(File.join(run_dir, "report.html"))
+      assert_operator report.length, :>, 1_000
+      assert_includes report, "Exemplos ilustrativos"
+      assert_includes report, "Não correspondem a anúncios"
+      assert_includes report, "Licença repetida em várias localizações"
+      refute report.match?(%r{https?://[^<]+/rooms/|host[_ ]?id|Rua [A-Z]|\b\d{4,}/AL\b}i)
       assert_raises(RuntimeError) { AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, mode: "public", output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv")) }
+    end
+  end
+
+  def test_force_creates_a_preserved_local_rerun
+    Dir.mktmpdir do |dir|
+      airbnb = File.join(dir, "listings-2026-06-23.csv")
+      official = File.join(dir, "official-2026-09-17.csv")
+      CSV.open(airbnb, "w", write_headers: true, headers: HEADERS) do |csv|
+        csv << ["Lisboa", "00123/AL", "https://example/1", "Alfama", "Apartment", "38.71", "-9.14", "Entire home/apt", "Apartment", "1", "host-1", "2026-06-23"]
+      end
+      CSV.open(official, "w", write_headers: true, headers: %w[NrRNAL LatLong DataRegisto Denominacao Endereco Concelho Modalidade NrUtentes]) do |csv|
+        csv << ["123", "38.71;-9.14", "2020-01-01", "Casa", "Rua", "Lisboa", "Apartamento", "2"]
+      end
+
+      root = File.join(dir, "private")
+      history = File.join(dir, "private", "history", "summary.csv")
+      first = AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, mode: "local", output_root: root, history_path: history)
+      rerun = AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, mode: "local", output_root: root, history_path: history, force: true)
+
+      assert_equal "2026-06-23__2026-09-17", first[:run_id]
+      assert_match(/\A2026-06-23__2026-09-17__rerun-\d{8}T\d{12}\z/, rerun[:run_id])
+      assert Dir.exist?(first[:path])
+      assert Dir.exist?(rerun[:path])
+      assert_equal 2, CSV.read(history, headers: true).length
     end
   end
 

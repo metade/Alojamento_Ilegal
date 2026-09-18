@@ -122,7 +122,7 @@ Implementação concluída:
 
 Critério de conclusão: cumprido. O caminho executado pelo CI só seleciona o modo público; o modo local requer uma escolha explícita e escreve numa área ignorada, com nomes diferentes dos outputs publicáveis.
 
-## Sessão 4 — Exemplos de anomalias
+## Sessão 4 — Exemplos de anomalias ✅ concluída (2026-09-18)
 
 Objetivo: explicar o método sem identificar operadores ou anúncios.
 
@@ -143,7 +143,15 @@ Evitar publicar:
 
 Cada exemplo deve ser marcado como `ilustrativo` ou `resultado agregado`.
 
-Critério de conclusão: é possível compreender cada tipo de sinal sem identificar facilmente uma propriedade ou operador.
+Implementação concluída:
+
+- [x] O relatório inclui cinco exemplos sintéticos: ausência de licença identificável, possíveis anúncios múltiplos do mesmo estabelecimento, repetição em localizações distintas, licença oficial fora de Lisboa e possível divergência de localização.
+- [x] Cada exemplo é marcado como ilustrativo e explica uma leitura prudente, sem apresentar conclusões legais.
+- [x] Os exemplos não incluem números reais de licença, títulos, IDs, URLs, endereços, coordenadas ou distâncias exatas.
+- [x] O README documenta o propósito dos exemplos e a fronteira dos dados publicados.
+- [x] Os testes verificam a presença da secção ilustrativa e a ausência de padrões identificáveis no relatório.
+
+Critério de conclusão: cumprido. É possível compreender cada tipo de sinal sem identificar facilmente uma propriedade ou operador.
 
 ## Sessão 5 — Preparar o site público
 

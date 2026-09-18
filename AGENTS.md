@@ -26,6 +26,8 @@ The default mode is `local`. It downloads missing public source snapshots and cr
 data/private/<airbnb-snapshot-date>__<official-download-date>/
 ```
 
+Local runs are immutable. For development reruns, `bundle exec ruby run_me.rb --force` preserves the existing run and writes a timestamped sibling rerun; `--force` is not supported for public runs.
+
 Use the explicit public mode to create sanitised, publishable outputs:
 
 ```bash

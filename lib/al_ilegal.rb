@@ -41,8 +41,10 @@ module AlIlegal
           mode = remaining.shift
         when /\A--mode=(.+)\z/
           mode = Regexp.last_match(1)
+        when "--force"
+          # Parsed separately by force?; accept it here so option validation succeeds.
         when "-h", "--help"
-          puts "Usage: bundle exec ruby run_me.rb [--mode public|local]"
+          puts "Usage: bundle exec ruby run_me.rb [--mode public|local] [--force]"
           exit 0
         else
           raise ArgumentError, "Unknown option: #{argument}"
@@ -52,6 +54,10 @@ module AlIlegal
       raise ArgumentError, "Mode must be public or local" unless %w[public local].include?(mode)
 
       mode
+    end
+
+    def force?(arguments)
+      arguments.include?("--force")
     end
   end
 
@@ -192,8 +198,9 @@ module AlIlegal
   module Analysis
     module_function
 
-    def run(airbnb_path:, official_path:, output_root: nil, history_path: nil, generate_pdf: false, mode: "local")
+    def run(airbnb_path:, official_path:, output_root: nil, history_path: nil, generate_pdf: false, mode: "local", force: false)
       raise ArgumentError, "Mode must be public or local" unless %w[public local].include?(mode)
+      raise ArgumentError, "--force is only supported in local mode" if force && mode == "public"
 
       output_root ||= mode == "public" ? "data/snapshots" : "data/private"
       history_path ||= mode == "public" ? "data/history/summary.csv" : "data/private/history/summary.csv"
@@ -202,9 +209,22 @@ module AlIlegal
       dates[:airbnb_snapshot_date] = File.basename(airbnb_path)[/(\d{4}-\d{2}-\d{2})/, 1] || dates[:airbnb_snapshot_date]
       official_download_date = File.basename(official_path)[/(\d{4}-\d{2}-\d{2})/, 1] || File.mtime(official_path).to_date.to_s
       dates[:official_register_download_date] = official_download_date
-      run_id = "#{dates[:airbnb_snapshot_date]}__#{official_download_date}"
+      base_run_id = "#{dates[:airbnb_snapshot_date]}__#{official_download_date}"
+      run_id = base_run_id
       run_dir = File.join(output_root, run_id)
-      raise "Run already exists and is immutable: #{run_dir}" if Dir.exist?(run_dir)
+      if Dir.exist?(run_dir)
+        raise "Run already exists and is immutable: #{run_dir}; use --force for a preserved local rerun" unless force
+
+        suffix = Time.now.utc.strftime("%Y%m%dT%H%M%S%6N")
+        run_id = "#{base_run_id}__rerun-#{suffix}"
+        run_dir = File.join(output_root, run_id)
+        increment = 2
+        while Dir.exist?(run_dir)
+          run_id = "#{base_run_id}__rerun-#{suffix}-#{increment}"
+          run_dir = File.join(output_root, run_id)
+          increment += 1
+        end
+      end
 
       groups = licence_groups(listings, official)
       freguesias = freguesia_rows(listings)
@@ -396,6 +416,37 @@ module AlIlegal
 
   module Report
     module_function
+
+    def illustrative_anomalies
+      [
+        {
+          signal: "Sem licença identificável",
+          pattern: "Um anúncio não apresenta um número que possa ser normalizado como registo AL.",
+          reading: "É um sinal para verificação; pode refletir um campo vazio, uma isenção ou um formato não reconhecido."
+        },
+        {
+          signal: "Provável estabelecimento com anúncios múltiplos",
+          pattern: "Vários anúncios com a mesma licença aparecem agrupados na mesma zona e descrevem quartos ou unidades.",
+          reading: "Pode corresponder a um único estabelecimento com várias ofertas, não a várias licenças independentes."
+        },
+        {
+          signal: "Licença repetida em várias localizações",
+          pattern: "A mesma licença normalizada surge em agrupamentos espaciais distintos.",
+          reading: "É uma possível reutilização ou divergência que requer confirmação no registo oficial."
+        },
+        {
+          signal: "Licença oficial fora de Lisboa",
+          pattern: "A licença é encontrada no registo oficial, mas o concelho oficial não é Lisboa.",
+          reading: "A diferença pode resultar de localização, cobertura do snapshot ou qualidade dos dados; não prova uma infração."
+        },
+        {
+          signal: "Possível divergência de localização",
+          pattern: "A localização aproximada do anúncio não é consistente com a localização indicada no registo.",
+          reading: "A comparação é indicativa e deve ser validada sem divulgar coordenadas ou endereços."
+        }
+      ]
+    end
+
     def historical_section(summary)
       rows = summary[:historical_comparisons].map do |item|
         metrics = item[:metrics]
@@ -409,7 +460,10 @@ module AlIlegal
       labels = groups.group_by { |g| g[:classification] }.transform_values(&:size)
       rows = groups.map { |g| "<tr><td>#{safe.call(g[:classification])}</td><td>#{safe.call(g[:official_municipality])}</td><td>#{safe.call(g[:official_type])}</td><td>#{g[:licence_groups]}</td><td>#{g[:listings]}</td><td>#{g[:spatial_locations]}</td></tr>" }.join
       freg = freguesias.map { |r| "<tr><td>#{safe.call(r[:freguesia])}</td><td>#{safe.call(r[:classification])}</td><td>#{r[:listings]}</td><td>#{r[:identifiable_licences]}</td><td>#{r[:establishments_estimate]}</td></tr>" }.join
-      "<!doctype html><html lang='pt'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Alojamento Local em Lisboa — #{safe.call(summary[:run_id])}</title><style>body{font:16px system-ui;max-width:1200px;margin:auto;padding:1rem;color:#243447}header{background:#123;padding:1.5rem;color:white;border-radius:12px}section{margin:1.5rem 0}table{border-collapse:collapse;width:100%;display:block;overflow:auto}th,td{padding:.5rem;border-bottom:1px solid #ddd;text-align:left}th{background:#edf2f7}.cards{display:flex;flex-wrap:wrap;gap:1rem}.card{padding:1rem;background:#edf2f7;border-radius:10px;min-width:145px}.bar{background:#2878c8;color:white;padding:.35rem;margin:.3rem 0;border-radius:4px}@media print{body{font-size:11px}header{print-color-adjust:exact}.no-print{display:none}}@media(max-width:600px){.cards{display:grid;grid-template-columns:1fr 1fr}}</style><body><header><h1>Alojamento Local em Lisboa</h1><p>Run #{safe.call(summary[:run_id])} · modo #{safe.call(summary[:mode])} · gerado em #{safe.call(summary[:generated_at])}</p><p>Indicador para verificação oficial</p></header><section><h2>Resumo</h2><div class='cards'><div class='card'><b>#{summary[:listings]}</b><br>listagens</div><div class='card'><b>#{summary[:licence_groups]}</b><br>grupos de licença</div><div class='card'><b>#{summary[:establishment_estimate]}</b><br>estimativa de estabelecimentos</div></div>#{labels.map { |label,count| "<div class='bar' style='width:#{[count * 100 / [groups.size,1].max,100].min}%'>#{safe.call(label)}: #{count}</div>" }.join}</section><section><h2>Grupos de licenças (agregado)</h2><table><thead><tr><th>Classificação</th><th>Concelho oficial</th><th>Tipo oficial</th><th>Grupos</th><th>Listagens</th><th>Localizações</th></tr></thead><tbody>#{rows}</tbody></table></section><section><h2>Por freguesia e classificação</h2><table><thead><tr><th>Freguesia</th><th>Classificação</th><th>Listagens</th><th>Licenças identificáveis</th><th>Estimativa</th></tr></thead><tbody>#{freg}</tbody></table></section><section><h2>Proveniência e método</h2><p>Fontes: <a href='#{safe.call(metadata[:source_urls][:airbnb])}'>Airbnb</a> e <a href='#{safe.call(metadata[:source_urls][:official])}'>registo oficial</a>. Datas e hashes SHA-256 estão em <code>metadata.json</code>. Metodologia #{safe.call(metadata[:methodology_version])}; análise #{safe.call(metadata[:analysis_version])}.</p><p>As classificações são indicadores analíticos e não conclusões legais. Requerem verificação junto das fontes oficiais.</p></section></body></html>"
+      examples = illustrative_anomalies.map do |example|
+        "<tr><th scope='row'>#{safe.call(example[:signal])}</th><td>#{safe.call(example[:pattern])}</td><td>#{safe.call(example[:reading])}</td></tr>"
+      end.join
+      "<!doctype html><html lang='pt'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Alojamento Local em Lisboa — #{safe.call(summary[:run_id])}</title><style>body{font:16px system-ui;max-width:1200px;margin:auto;padding:1rem;color:#243447}header{background:#123;padding:1.5rem;color:white;border-radius:12px}section{margin:1.5rem 0}table{border-collapse:collapse;width:100%;display:block;overflow:auto}th,td{padding:.5rem;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{background:#edf2f7}.cards{display:flex;flex-wrap:wrap;gap:1rem}.card{padding:1rem;background:#edf2f7;border-radius:10px;min-width:145px}.bar{background:#2878c8;color:white;padding:.35rem;margin:.3rem 0;border-radius:4px}@media print{body{font-size:11px}header{print-color-adjust:exact}.no-print{display:none}}@media(max-width:600px){.cards{display:grid;grid-template-columns:1fr 1fr}}</style><body><header><h1>Alojamento Local em Lisboa</h1><p>Run #{safe.call(summary[:run_id])} · modo #{safe.call(summary[:mode])} · gerado em #{safe.call(summary[:generated_at])}</p><p>Indicador para verificação oficial</p></header><section><h2>Resumo</h2><div class='cards'><div class='card'><b>#{summary[:listings]}</b><br>listagens</div><div class='card'><b>#{summary[:licence_groups]}</b><br>grupos de licença</div><div class='card'><b>#{summary[:establishment_estimate]}</b><br>estimativa de estabelecimentos</div></div>#{labels.map { |label,count| "<div class='bar' style='width:#{[count * 100 / [groups.size,1].max,100].min}%'>#{safe.call(label)}: #{count}</div>" }.join}</section><section><h2>Grupos de licenças (agregado)</h2><table><thead><tr><th>Classificação</th><th>Concelho oficial</th><th>Tipo oficial</th><th>Grupos</th><th>Listagens</th><th>Localizações</th></tr></thead><tbody>#{rows}</tbody></table></section><section><h2>Por freguesia e classificação</h2><table><thead><tr><th>Freguesia</th><th>Classificação</th><th>Listagens</th><th>Licenças identificáveis</th><th>Estimativa</th></tr></thead><tbody>#{freg}</tbody></table></section><section><h2>Exemplos ilustrativos</h2><p>Os exemplos seguintes são sintéticos e servem apenas para explicar os sinais. Não correspondem a anúncios, operadores, números de licença, endereços ou casos individuais.</p><table><thead><tr><th>Sinal</th><th>Padrão ilustrativo</th><th>Leitura prudente</th></tr></thead><tbody>#{examples}</tbody></table></section><section><h2>Proveniência e método</h2><p>Fontes: <a href='#{safe.call(metadata[:source_urls][:airbnb])}'>Airbnb</a> e <a href='#{safe.call(metadata[:source_urls][:official])}'>registo oficial</a>. Datas e hashes SHA-256 estão em <code>metadata.json</code>. Metodologia #{safe.call(metadata[:methodology_version])}; análise #{safe.call(metadata[:analysis_version])}.</p><p>As classificações são indicadores analíticos e não conclusões legais. Requerem verificação junto das fontes oficiais.</p></section></body></html>"
     end
   end
 end
