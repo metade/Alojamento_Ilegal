@@ -62,7 +62,7 @@ Resultado da auditoria e limpeza local:
 
 Nota sobre o remoto:
 
-- O remoto GitHub ainda aponta para a história anterior; será necessário um force-push coordenado para publicar a história limpa.
+- O remoto GitHub foi atualizado com `git push --force-with-lease`; `origin/main` aponta agora para a história limpa.
 
 - Pesquisar todos os commits, branches e tags por:
   - `host_id`;
