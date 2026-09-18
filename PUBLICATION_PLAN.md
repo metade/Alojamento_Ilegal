@@ -4,7 +4,7 @@ Este plano separa a análise detalhada local da publicação de resultados agreg
 
 ## Princípios
 
-- O modo público deve ser o modo predefinido e seguro.
+- O modo local deve ser o modo predefinido para proteger a investigação detalhada; a publicação requer `--mode public` explícito.
 - Dados brutos e resultados detalhados permanecem locais e são ignorados pelo Git.
 - A publicação contém apenas resultados derivados, agregados e anonimizados.
 - Exemplos de anomalias devem ser ilustrativos ou agregados, não identificáveis.
@@ -80,7 +80,7 @@ Nota sobre o remoto:
 
 Critério de conclusão local: cumprido. `ruby scripts/audit_publication.rb --history` termina com sucesso para todos os refs locais alcançáveis.
 
-## Sessão 3 — Modos público e local
+## Sessão 3 — Modos público e local ✅ concluída (2026-09-18)
 
 Objetivo: permitir relatórios anónimos no GitHub Actions e investigação detalhada local.
 
@@ -93,7 +93,7 @@ bundle exec ruby run_me.rb --mode local
 
 Regras:
 
-- `public` é o modo predefinido.
+- `local` é o modo predefinido; `public` requer seleção explícita.
 - GitHub Actions chama explicitamente `--mode public`.
 - `local` escreve resultados detalhados apenas numa área ignorada.
 - O modo local pode incluir campos diagnósticos adicionais, mas nunca deve ser publicado automaticamente.
@@ -109,6 +109,18 @@ Testes necessários:
 - A linguagem pública usa “indicador”, “possível divergência” e “requer verificação”.
 
 Critério de conclusão: o CI não consegue publicar o modo local por engano.
+
+Implementação concluída:
+
+- [x] `run_me.rb` aceita `--mode public` e `--mode local`; `local` é o predefinido.
+- [x] O modo público mantém os schemas agregados em `data/snapshots/` e regista `mode: public` nos outputs.
+- [x] O modo local escreve ficheiros com nomes/schema distintos em `data/private/`, incluindo os campos diagnósticos necessários.
+- [x] Os outputs locais e o histórico local permanecem ignorados pelo Git.
+- [x] O workflow chama explicitamente `run_me.rb --mode public`.
+- [x] O relatório identifica o modo e a data de geração.
+- [x] Testes cobrem o modo público predefinido, a rejeição de uma opção pública de detalhes e a presença de diagnósticos no modo local.
+
+Critério de conclusão: cumprido. O caminho executado pelo CI só seleciona o modo público; o modo local requer uma escolha explícita e escreve numa área ignorada, com nomes diferentes dos outputs publicáveis.
 
 ## Sessão 4 — Exemplos de anomalias
 

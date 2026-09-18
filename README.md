@@ -9,7 +9,19 @@ bundle install
 bundle exec ruby run_me.rb
 ```
 
-O script descarrega as fontes públicas em falta e cria um run imutável em:
+Por defeito, a execução é local e cria um run imutável detalhado em:
+
+```text
+data/private/<airbnb-snapshot-date>__<official-download-date>/
+```
+
+Os resultados locais incluem diagnósticos como `host_id`, coordenadas e valores de licença originais e permanecem fora do Git. Para gerar os outputs agregados publicáveis, selecione explicitamente o modo público:
+
+```bash
+bundle exec ruby run_me.rb --mode public
+```
+
+O modo público cria o run em:
 
 ```text
 data/snapshots/<airbnb-snapshot-date>__<official-download-date>/
@@ -27,7 +39,7 @@ Cada run contém:
 O histórico append-only está em `data/history/summary.csv`. Runs existentes nunca são sobrescritos. Para gerar também um PDF derivado, instale `wkhtmltopdf` ou `weasyprint` e execute:
 
 ```bash
-GENERATE_PDF=1 bundle exec ruby run_me.rb
+GENERATE_PDF=1 bundle exec ruby run_me.rb --mode public
 ```
 
 ## Testes
@@ -49,7 +61,7 @@ O primeiro comando verifica os ficheiros publicáveis na árvore atual; o segund
 
 ## GitHub Actions
 
-`.github/workflows/quarterly-analysis.yml` permite execução trimestral e manual. O workflow executa os testes, descarrega as fontes, gera os relatórios, publica os outputs versionados no repositório e guarda artefactos temporários para debugging.
+`.github/workflows/quarterly-analysis.yml` permite execução trimestral e manual. O workflow executa os testes, descarrega as fontes, chama explicitamente `run_me.rb --mode public`, publica os outputs versionados no repositório e guarda artefactos temporários para debugging.
 
 `.github/workflows/publication-audit.yml` executa automaticamente a verificação de segurança dos outputs em pushes e pull requests.
 

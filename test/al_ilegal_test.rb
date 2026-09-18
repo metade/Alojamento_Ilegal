@@ -22,4 +22,14 @@ class AlIlegalTest < Minitest::Test
   def test_parses_coordinates_without_spaces_and_with_decimal_commas
     assert_equal [38.7530581, -9.181339], AlIlegal.parse_lat_long("38,7530581;-9,181339")
   end
+
+  def test_local_is_the_default_cli_mode
+    assert_equal "local", AlIlegal::CLI.mode!([])
+    assert_equal "public", AlIlegal::CLI.mode!(["--mode", "public"])
+  end
+
+  def test_cli_accepts_local_mode_without_adding_a_public_details_option
+    assert_equal "local", AlIlegal::CLI.mode!(["--mode=local"])
+    assert_raises(ArgumentError) { AlIlegal::CLI.mode!(["--include-details"]) }
+  end
 end

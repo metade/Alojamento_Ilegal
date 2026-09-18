@@ -17,7 +17,7 @@ class VersionedAnalysisTest < Minitest::Test
         csv << ["123", "38.71;-9.14", "2020-01-01", "Casa", "Rua", "Lisboa", "Apartamento", "2"]
       end
 
-      result = AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv"))
+      result = AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, mode: "public", output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv"))
       run_dir = result[:path]
       assert_equal "2026-06-23__2026-09-17", result[:run_id]
       assert_equal %w[metadata.json report.html summary.json listings.csv licence_groups.csv freguesias.csv].sort, Dir.children(run_dir).sort
@@ -34,8 +34,30 @@ class VersionedAnalysisTest < Minitest::Test
       metadata = JSON.parse(File.read(File.join(run_dir, "metadata.json")))
       refute metadata.to_s.match?(/host_id|listing_url|licensa_raw|latitude|longitude|official_address/i)
       refute metadata.to_s.include?("path")
-      assert_equal "2.0.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
-      assert_raises(RuntimeError) { AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv")) }
+      assert_equal "3.0.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
+      assert_raises(RuntimeError) { AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, mode: "public", output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv")) }
+    end
+  end
+
+  def test_local_mode_writes_diagnostics_to_distinct_local_outputs
+    Dir.mktmpdir do |dir|
+      airbnb = File.join(dir, "listings-2026-06-23.csv")
+      official = File.join(dir, "official-2026-09-17.csv")
+      CSV.open(airbnb, "w", write_headers: true, headers: HEADERS) do |csv|
+        csv << ["Lisboa", "00123/AL", "https://example/1", "Alfama", "Apartment", "38.71", "-9.14", "Entire home/apt", "Apartment", "1", "host-1", "2026-06-23"]
+      end
+      CSV.open(official, "w", write_headers: true, headers: %w[NrRNAL LatLong DataRegisto Denominacao Endereco Concelho Modalidade NrUtentes]) do |csv|
+        csv << ["123", "38.71;-9.14", "2020-01-01", "Casa", "Rua", "Lisboa", "Apartamento", "2"]
+      end
+
+      result = AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, mode: "local", output_root: File.join(dir, "private"), history_path: File.join(dir, "private", "history", "summary.csv"))
+      run_dir = result[:path]
+      assert_equal %w[freguesias_summary.csv licence_groups_detailed.csv listings_detailed.csv metadata_local.json report_local.html summary_local.json].sort, Dir.children(run_dir).sort
+      detailed = CSV.read(File.join(run_dir, "listings_detailed.csv"), headers: true)
+      assert_includes detailed.headers, "host_id"
+      assert_includes detailed.headers, "licensa_raw"
+      assert_equal "local", JSON.parse(File.read(File.join(run_dir, "metadata_local.json"))) ["mode"]
+      refute Dir.exist?(File.join(dir, "snapshots"))
     end
   end
 

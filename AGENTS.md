@@ -20,13 +20,25 @@ Run the analysis:
 bundle exec ruby run_me.rb
 ```
 
-The script downloads missing public source snapshots and creates an immutable run under:
+The default mode is `local`. It downloads missing public source snapshots and creates an immutable detailed run under:
+
+```text
+data/private/<airbnb-snapshot-date>__<official-download-date>/
+```
+
+Use the explicit public mode to create sanitised, publishable outputs:
+
+```bash
+bundle exec ruby run_me.rb --mode public
+```
+
+Public runs are created under:
 
 ```text
 data/snapshots/<airbnb-snapshot-date>__<official-download-date>/
 ```
 
-Each run contains `metadata.json`, `summary.json`, `listings.csv`, `licence_groups.csv`, `freguesias.csv`, and `report.html`. Set `GENERATE_PDF=1` to create the optional PDF derivative when `wkhtmltopdf` or `weasyprint` is installed. Historical summary rows are appended to `data/history/summary.csv`; an existing run ID must never be overwritten.
+Local runs use distinct names such as `listings_detailed.csv`, `licence_groups_detailed.csv`, `metadata_local.json`, `summary_local.json`, and `report_local.html`; they may contain diagnostic fields and are ignored by Git. Public runs contain `metadata.json`, `summary.json`, `listings.csv`, `licence_groups.csv`, `freguesias.csv`, and `report.html`. Set `GENERATE_PDF=1` to create the optional PDF derivative when `wkhtmltopdf` or `weasyprint` is installed. Historical summary rows are appended to `data/history/summary.csv` for public runs and `data/private/history/summary.csv` for local runs; an existing run ID must never be overwritten.
 
 Run tests:
 
@@ -48,7 +60,7 @@ ruby -c lib/al_ilegal/data.rb
 
 Raw data under `data_sources/**/*.csv`, detailed local results under `data/private/`, and cached files under `tmp/` are intentionally ignored by Git. Transformed, versioned outputs under `data/snapshots/` and `data/history/` are publishable project outputs and may be committed. Snapshot CSVs are aggregate-only and must not contain listing/host identifiers, listing URLs, names, addresses, exact coordinates, or raw licence strings. Do not commit large raw upstream datasets.
 
-The GitHub Actions workflow in `.github/workflows/quarterly-analysis.yml` runs quarterly or through `workflow_dispatch`, tests before analysis, generates reports, commits permanent outputs, and uploads temporary debugging artifacts.
+The GitHub Actions workflow in `.github/workflows/quarterly-analysis.yml` runs quarterly or through `workflow_dispatch`, tests before analysis, explicitly selects `--mode public`, generates reports, commits permanent outputs, and uploads temporary debugging artifacts.
 
 Before committing changes to `data/snapshots/`, `data/history/`, or publication workflows, run `ruby scripts/audit_publication.rb`. Run `ruby scripts/audit_publication.rb --history` when auditing repository history. A history rewrite requires a recoverable Git backup and coordinated approval before force-pushing.
 
