@@ -1,3 +1,6 @@
 .DS_Store
 data_sources/*.csv
+data_sources/**/*.csv
+data/private/
 tmp/*
+tmp/**/*

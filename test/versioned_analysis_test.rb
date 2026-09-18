@@ -21,8 +21,20 @@ class VersionedAnalysisTest < Minitest::Test
       run_dir = result[:path]
       assert_equal "2026-06-23__2026-09-17", result[:run_id]
       assert_equal %w[metadata.json report.html summary.json listings.csv licence_groups.csv freguesias.csv].sort, Dir.children(run_dir).sort
-      assert_equal 2, CSV.read(File.join(run_dir, "listings.csv"), headers: true).length
-      assert_equal "1.0.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
+      public_listings = CSV.read(File.join(run_dir, "listings.csv"), headers: true)
+      assert_equal 2, public_listings.length
+      assert_equal AlIlegal::PUBLIC_CSV_SCHEMAS["listings.csv"], public_listings.headers
+      refute_includes public_listings.headers, "host_id"
+      refute public_listings.to_csv.match?(%r{https?://|/rooms/})
+      AlIlegal::PUBLIC_CSV_SCHEMAS.each do |filename, headers|
+        public_csv = CSV.read(File.join(run_dir, filename), headers: true)
+        assert_equal headers, public_csv.headers
+        refute public_csv.to_csv.match?(%r{https?://|/rooms/})
+      end
+      metadata = JSON.parse(File.read(File.join(run_dir, "metadata.json")))
+      refute metadata.to_s.match?(/host_id|listing_url|licensa_raw|latitude|longitude|official_address/i)
+      refute metadata.to_s.include?("path")
+      assert_equal "2.0.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
       assert_raises(RuntimeError) { AlIlegal::Analysis.run(airbnb_path: airbnb, official_path: official, output_root: File.join(dir, "snapshots"), history_path: File.join(dir, "history", "summary.csv")) }
     end
   end

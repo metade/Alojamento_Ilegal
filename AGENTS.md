@@ -46,7 +46,7 @@ ruby -c lib/al_ilegal/data.rb
 
 ## Data and reproducibility
 
-Raw data under `data_sources/*.csv` and cached files under `tmp/` are intentionally ignored by Git. Transformed, versioned outputs under `data/snapshots/` and `data/history/` are publishable project outputs and may be committed. Do not commit large raw upstream datasets.
+Raw data under `data_sources/**/*.csv`, detailed local results under `data/private/`, and cached files under `tmp/` are intentionally ignored by Git. Transformed, versioned outputs under `data/snapshots/` and `data/history/` are publishable project outputs and may be committed. Snapshot CSVs are aggregate-only and must not contain listing/host identifiers, listing URLs, names, addresses, exact coordinates, or raw licence strings. Do not commit large raw upstream datasets.
 
 The GitHub Actions workflow in `.github/workflows/quarterly-analysis.yml` runs quarterly or through `workflow_dispatch`, tests before analysis, generates reports, commits permanent outputs, and uploads temporary debugging artifacts.
 
@@ -62,7 +62,7 @@ Historical comparisons are generated only for metrics with the same methodology 
 
 Licence values are normalized conservatively. Leading zeroes and clear `/AL` or legacy year formats may be normalized; other schemes such as `/UT/YYYY` must not be treated as AL registration numbers.
 
-Repeated licence numbers are not automatically collapsed. The classifier uses spatial clusters within 500 metres, listing names, room/property types, official establishment type, and official municipality. `host_id` is retained as metadata but is not used as a merge criterion.
+Repeated licence numbers are not automatically collapsed. The classifier uses spatial clusters within 500 metres, listing names, room/property types, official establishment type, and official municipality. `host_id` may exist in in-memory/local analysis rows as diagnostic metadata, but is not used as a merge criterion and must never be written to public outputs.
 
 The output distinguishes, among other categories:
 
@@ -76,7 +76,7 @@ The establishment-level figure printed by the script is an analytical estimate. 
 
 ## Editing guidance
 
-- Preserve `licensa_raw` when changing licence parsing so the source value remains auditable.
+- Preserve `licensa_raw` in internal analysis rows when changing licence parsing so the source value remains auditable; never write it to public outputs.
 - Add regression tests for new licence formats and spatial rules.
 - Do not describe unmatched or geographically inconsistent listings as illegal without official validation.
 - Do not commit raw downloaded datasets unless explicitly requested.

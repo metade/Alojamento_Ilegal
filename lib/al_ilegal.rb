@@ -12,8 +12,17 @@ require "time"
 
 module AlIlegal
   ANALYSIS_VERSION = "2.0.0"
-  OUTPUT_SCHEMA_VERSION = "1.0.0"
+  OUTPUT_SCHEMA_VERSION = "2.0.0"
   METHODOLOGY_VERSION = "1.0.0"
+  PUBLIC_CSV_SCHEMAS = {
+    "listings.csv" => %w[freguesia classification listings identifiable_licences establishments_estimate],
+    "licence_groups.csv" => %w[classification official_municipality official_type licence_groups listings spatial_locations establishments_estimate],
+    "freguesias.csv" => %w[freguesia listings identifiable_licences establishments_estimate]
+  }.freeze
+  FORBIDDEN_PUBLIC_FIELDS = %w[
+    host_id listing_url url id name title nome licensa licensa_raw
+    latitude longitude lat lng address endereco official_address
+  ].freeze
   COLLAPSIBLE_ASSESSMENTS = [
     "provável estabelecimento com anúncios múltiplos",
     "licença repetida na mesma localização"
@@ -172,15 +181,16 @@ module AlIlegal
       summary[:historical_comparisons] = historical_comparisons(history_path, summary)
       metadata = metadata(airbnb_path, official_path, dates, run_id)
       FileUtils.mkdir_p(run_dir)
-      write_csv(File.join(run_dir, "listings.csv"), listings)
-      write_csv(File.join(run_dir, "licence_groups.csv"), groups)
+      write_csv(File.join(run_dir, "listings.csv"), public_listing_rows(listings))
+      write_csv(File.join(run_dir, "licence_groups.csv"), public_group_rows(groups))
       write_csv(File.join(run_dir, "freguesias.csv"), freguesias)
       File.write(File.join(run_dir, "metadata.json"), JSON.pretty_generate(metadata) + "\n")
       File.write(File.join(run_dir, "summary.json"), JSON.pretty_generate(summary) + "\n")
-      report = Report.html(metadata, summary, groups, freguesias)
+      report = Report.html(metadata, summary, public_group_rows(groups), public_listing_rows(listings))
       File.write(File.join(run_dir, "report.html"), report.sub("</body></html>", Report.historical_section(summary) + "</body></html>"))
       generate_pdf_file(run_dir) if generate_pdf
       append_history(history_path, summary)
+      validate_public_outputs!(run_dir)
       {run_id: run_id, path: run_dir, summary: summary}
     end
 
@@ -230,6 +240,66 @@ module AlIlegal
          establishment_estimate: AlIlegal.establishment_estimate(rows)}
       end.sort_by { |row| row[:licensa] }
     end
+
+    def public_listing_rows(listings)
+      listings.group_by { |row| [row[:bairro].to_s, row[:license_group_assessment].to_s] }.map do |(freguesia, classification), rows|
+        {
+          freguesia: freguesia,
+          classification: classification,
+          listings: rows.size,
+          identifiable_licences: rows.count { |row| !row[:licensa].to_s.empty? },
+          establishments_estimate: AlIlegal.establishment_estimate(rows)
+        }
+      end.sort_by { |row| [row[:freguesia], row[:classification]] }
+    end
+
+    def public_group_rows(groups)
+      groups.group_by do |group|
+        [group[:classification].to_s, public_municipality(group[:official_concelho]), public_type(group[:official_modalidade])]
+      end.map do |(classification, municipality, type), rows|
+        {
+          classification: classification,
+          official_municipality: municipality,
+          official_type: type,
+          licence_groups: rows.size,
+          listings: rows.sum { |row| row[:listings].to_i },
+          spatial_locations: rows.sum { |row| row[:spatial_locations].to_i },
+          establishments_estimate: rows.sum { |row| row[:establishment_estimate].to_i }
+        }
+      end.sort_by { |row| [row[:classification], row[:official_municipality], row[:official_type]] }
+    end
+
+    def public_municipality(value)
+      return "não identificado" if value.to_s.empty?
+      value == "Lisboa" ? "Lisboa" : "outro município"
+    end
+
+    def public_type(value)
+      text = value.to_s
+      return "não identificado" if text.empty?
+      return "hospedagem" if text.match?(/Hospedagem|Hostel|Quartos/i)
+      return "apartamento" if text.match?(/Apartamento|Moradia|Casa/i)
+
+      "outro tipo"
+    end
+
+    def validate_public_outputs!(run_dir)
+      PUBLIC_CSV_SCHEMAS.each do |filename, expected_headers|
+        path = File.join(run_dir, filename)
+        headers = CSV.open(path, &:readline)
+        raise "Invalid public schema for #{filename}" unless headers == expected_headers
+        forbidden_headers = headers.map(&:downcase) & FORBIDDEN_PUBLIC_FIELDS
+        raise "Forbidden field in public output #{filename}: #{forbidden_headers.join(', ')}" unless forbidden_headers.empty?
+        CSV.foreach(path, headers: true) do |row|
+          values = row.fields.join(" ")
+          raise "Forbidden content in public output #{filename}" if values.match?(%r{https?://|www\.|/rooms/}i)
+        end
+      end
+
+      metadata = JSON.parse(File.read(File.join(run_dir, "metadata.json")))
+      raise "Public metadata contains a local source path" if metadata.dig("source_files", "airbnb", "path") || metadata.dig("source_files", "official", "path")
+      raise "Forbidden field in public output" if metadata.to_s.match?(/host_id|listing_url|licensa_raw|latitude|longitude|official_address/i)
+    end
     def freguesia_rows(listings)
       listings.group_by { |row| row[:bairro].to_s }.map { |name, rows| {freguesia: name, listings: rows.size, identifiable_licences: rows.count { |r| !r[:licensa].to_s.empty? }, establishments_estimate: AlIlegal.establishment_estimate(rows)} }.sort_by { |r| r[:freguesia] }
     end
@@ -241,7 +311,7 @@ module AlIlegal
     def metadata(airbnb, official, dates, run_id)
       commit, = Open3.capture2("git", "rev-parse", "HEAD")
       {run_id: run_id, source_urls: {airbnb: Data.airbnb_url(dates[:airbnb_snapshot_date]), official: Data::OFFICIAL_URL}, source_dates: dates,
-       source_files: {airbnb: {path: airbnb, sha256: Digest::SHA256.file(airbnb).hexdigest}, official: {path: official, sha256: Digest::SHA256.file(official).hexdigest}},
+       source_files: {airbnb: {sha256: Digest::SHA256.file(airbnb).hexdigest}, official: {sha256: Digest::SHA256.file(official).hexdigest}},
        git_commit: commit.strip, analysis_version: ANALYSIS_VERSION, methodology_version: METHODOLOGY_VERSION, output_schema_version: OUTPUT_SCHEMA_VERSION}
     end
     def write_csv(path, rows)
@@ -281,9 +351,9 @@ module AlIlegal
     def html(metadata, summary, groups, freguesias)
       safe = ->(value) { ERB::Util.html_escape(value.to_s) }
       labels = groups.group_by { |g| g[:classification] }.transform_values(&:size)
-      rows = groups.map { |g| "<tr><td>#{safe.call(g[:licensa].empty? ? '—' : g[:licensa])}</td><td>#{safe.call(g[:classification])}</td><td>#{g[:listings]}</td><td>#{g[:spatial_locations]}</td><td>#{safe.call(g[:official_concelho])}</td></tr>" }.join
-      freg = freguesias.map { |r| "<tr><td>#{safe.call(r[:freguesia])}</td><td>#{r[:listings]}</td><td>#{r[:identifiable_licences]}</td><td>#{r[:establishments_estimate]}</td></tr>" }.join
-      "<!doctype html><html lang='pt'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Alojamento Ilegal — #{safe.call(summary[:run_id])}</title><style>body{font:16px system-ui;max-width:1200px;margin:auto;padding:1rem;color:#243447}header{background:#123;padding:1.5rem;color:white;border-radius:12px}section{margin:1.5rem 0}table{border-collapse:collapse;width:100%;display:block;overflow:auto}th,td{padding:.5rem;border-bottom:1px solid #ddd;text-align:left}th{background:#edf2f7}.cards{display:flex;flex-wrap:wrap;gap:1rem}.card{padding:1rem;background:#edf2f7;border-radius:10px;min-width:145px}.bar{background:#2878c8;color:white;padding:.35rem;margin:.3rem 0;border-radius:4px}@media print{body{font-size:11px}header{print-color-adjust:exact}.no-print{display:none}}@media(max-width:600px){.cards{display:grid;grid-template-columns:1fr 1fr}}</style><body><header><h1>Alojamento Local em Lisboa</h1><p>Run #{safe.call(summary[:run_id])} · indicador para verificação oficial</p></header><section><h2>Resumo</h2><div class='cards'><div class='card'><b>#{summary[:listings]}</b><br>listagens</div><div class='card'><b>#{summary[:licence_groups]}</b><br>grupos de licença</div><div class='card'><b>#{summary[:establishment_estimate]}</b><br>estimativa de estabelecimentos</div></div>#{labels.map { |label,count| "<div class='bar' style='width:#{[count * 100 / [groups.size,1].max,100].min}%'>#{safe.call(label)}: #{count}</div>" }.join}</section><section><h2>Grupos de licenças</h2><table><thead><tr><th>Licença</th><th>Classificação</th><th>Listagens</th><th>Localizações</th><th>Concelho oficial</th></tr></thead><tbody>#{rows}</tbody></table></section><section><h2>Por freguesia</h2><table><thead><tr><th>Freguesia</th><th>Listagens</th><th>Licenças identificáveis</th><th>Estimativa</th></tr></thead><tbody>#{freg}</tbody></table></section><section><h2>Proveniência e método</h2><p>Fontes: <a href='#{safe.call(metadata[:source_urls][:airbnb])}'>Airbnb</a> e <a href='#{safe.call(metadata[:source_urls][:official])}'>registo oficial</a>. Datas e hashes SHA-256 estão em <code>metadata.json</code>. Metodologia #{safe.call(metadata[:methodology_version])}; análise #{safe.call(metadata[:analysis_version])}.</p><p>As classificações são indicadores analíticos e não conclusões legais. Requerem verificação junto das fontes oficiais.</p></section></body></html>"
+      rows = groups.map { |g| "<tr><td>#{safe.call(g[:classification])}</td><td>#{safe.call(g[:official_municipality])}</td><td>#{safe.call(g[:official_type])}</td><td>#{g[:licence_groups]}</td><td>#{g[:listings]}</td><td>#{g[:spatial_locations]}</td></tr>" }.join
+      freg = freguesias.map { |r| "<tr><td>#{safe.call(r[:freguesia])}</td><td>#{safe.call(r[:classification])}</td><td>#{r[:listings]}</td><td>#{r[:identifiable_licences]}</td><td>#{r[:establishments_estimate]}</td></tr>" }.join
+      "<!doctype html><html lang='pt'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Alojamento Local em Lisboa — #{safe.call(summary[:run_id])}</title><style>body{font:16px system-ui;max-width:1200px;margin:auto;padding:1rem;color:#243447}header{background:#123;padding:1.5rem;color:white;border-radius:12px}section{margin:1.5rem 0}table{border-collapse:collapse;width:100%;display:block;overflow:auto}th,td{padding:.5rem;border-bottom:1px solid #ddd;text-align:left}th{background:#edf2f7}.cards{display:flex;flex-wrap:wrap;gap:1rem}.card{padding:1rem;background:#edf2f7;border-radius:10px;min-width:145px}.bar{background:#2878c8;color:white;padding:.35rem;margin:.3rem 0;border-radius:4px}@media print{body{font-size:11px}header{print-color-adjust:exact}.no-print{display:none}}@media(max-width:600px){.cards{display:grid;grid-template-columns:1fr 1fr}}</style><body><header><h1>Alojamento Local em Lisboa</h1><p>Run #{safe.call(summary[:run_id])} · indicador para verificação oficial</p></header><section><h2>Resumo</h2><div class='cards'><div class='card'><b>#{summary[:listings]}</b><br>listagens</div><div class='card'><b>#{summary[:licence_groups]}</b><br>grupos de licença</div><div class='card'><b>#{summary[:establishment_estimate]}</b><br>estimativa de estabelecimentos</div></div>#{labels.map { |label,count| "<div class='bar' style='width:#{[count * 100 / [groups.size,1].max,100].min}%'>#{safe.call(label)}: #{count}</div>" }.join}</section><section><h2>Grupos de licenças (agregado)</h2><table><thead><tr><th>Classificação</th><th>Concelho oficial</th><th>Tipo oficial</th><th>Grupos</th><th>Listagens</th><th>Localizações</th></tr></thead><tbody>#{rows}</tbody></table></section><section><h2>Por freguesia e classificação</h2><table><thead><tr><th>Freguesia</th><th>Classificação</th><th>Listagens</th><th>Licenças identificáveis</th><th>Estimativa</th></tr></thead><tbody>#{freg}</tbody></table></section><section><h2>Proveniência e método</h2><p>Fontes: <a href='#{safe.call(metadata[:source_urls][:airbnb])}'>Airbnb</a> e <a href='#{safe.call(metadata[:source_urls][:official])}'>registo oficial</a>. Datas e hashes SHA-256 estão em <code>metadata.json</code>. Metodologia #{safe.call(metadata[:methodology_version])}; análise #{safe.call(metadata[:analysis_version])}.</p><p>As classificações são indicadores analíticos e não conclusões legais. Requerem verificação junto das fontes oficiais.</p></section></body></html>"
     end
   end
 end

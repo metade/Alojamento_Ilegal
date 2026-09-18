@@ -19,8 +19,8 @@ Cada run contém:
 
 - `metadata.json` — URLs, datas, hashes SHA-256, commit Git e versões;
 - `summary.json` — métricas, classificações e comparações históricas;
-- `listings.csv` — todas as linhas de anúncios preservadas;
-- `licence_groups.csv` — grupos e classificações por licença;
+- `listings.csv` — contagens agregadas por freguesia e classificação;
+- `licence_groups.csv` — contagens agregadas por classificação e categorias oficiais;
 - `freguesias.csv` — métricas por freguesia;
 - `report.html` — relatório autónomo em português.
 
@@ -42,7 +42,7 @@ ruby -Itest test/versioned_analysis_test.rb
 
 `.github/workflows/quarterly-analysis.yml` permite execução trimestral e manual. O workflow executa os testes, descarrega as fontes, gera os relatórios, publica os outputs versionados no repositório e guarda artefactos temporários para debugging.
 
-Os artefactos do GitHub Actions têm retenção limitada; os snapshots commitados em `data/snapshots/` e o histórico em `data/history/` são a fonte permanente do projeto. Datasets brutos em `data_sources/` continuam fora do Git por defeito.
+Os artefactos do GitHub Actions têm retenção limitada; os snapshots commitados em `data/snapshots/` e o histórico em `data/history/` são a fonte permanente do projeto. Datasets brutos em `data_sources/`, resultados detalhados em `data/private/` e caches em `tmp/` continuam fora do Git por defeito. Os CSVs dos snapshots são agregados e não contêm identificadores de anúncios, anfitriões, nomes, endereços, coordenadas ou valores de licença individuais.
 
 ## Dados e método
 
@@ -57,6 +57,6 @@ As licenças são normalizadas de forma conservadora. O analisador distingue, en
 - licença oficial fora de Lisboa;
 - ausência de licença identificável.
 
-`host_id` é preservado como metadado, mas não é critério de agrupamento. A estimativa de estabelecimentos colapsa apenas categorias de menor risco e mantém casos de reutilização suspeita separados.
+`host_id` pode ser usado apenas durante a análise local como metadado, nunca como critério de agrupamento; não é escrito nos outputs públicos. A estimativa de estabelecimentos colapsa apenas categorias de menor risco e mantém casos de reutilização suspeita separados.
 
 Para instruções de manutenção e interpretação, consulte [`AGENTS.md`](AGENTS.md).
