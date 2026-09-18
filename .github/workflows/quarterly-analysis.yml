@@ -21,8 +21,9 @@ jobs:
           bundler-cache: true
       - name: Testes
         run: |
-          ruby -Itest test/al_ilegal_test.rb
-          ruby -Itest test/spatial_clusters_test.rb
+          bundle exec ruby -Itest test/al_ilegal_test.rb
+          bundle exec ruby -Itest test/spatial_clusters_test.rb
+          bundle exec ruby -Itest test/versioned_analysis_test.rb
       - name: Executar análise e gerar relatório
         run: GENERATE_PDF=1 bundle exec ruby run_me.rb
       - name: Publicar outputs versionados
