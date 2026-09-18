@@ -55,13 +55,15 @@ module AlIlegal
       lisbon_section = page[/<h3[^>]*>\s*Lisbon.*?<\/h3>(.*?)(?=<h3|\z)/mi, 1]
       raise "Could not find Lisbon on the Inside Airbnb data page" unless lisbon_section
 
-      date_text = lisbon_section[/<h4[^>]*>\s*([^<]+?)\s*\(/mi, 1]
-      date = Date.parse(date_text.to_s)
       link = lisbon_section[/href=["']([^"']*listings\.csv\.gz)["']/i, 1]
       raise "Could not find Lisbon listings.csv.gz on the Inside Airbnb data page" unless link
 
+      date_text = link[%r{/((?:19|20)\d{2}-\d{2}-\d{2})/}, 1]
+      date_text ||= lisbon_section[/<h4[^>]*>.*?((?:19|20)\d{2}-\d{2}-\d{2}|\d{1,2}\s+[A-Za-z]+,?\s+\d{4}).*?<\/h4>/mi, 1]
+      date = Date.parse(date_text.to_s)
+
       [date.to_s, link]
-    rescue ArgumentError
+    rescue ArgumentError, Date::Error
       raise "Could not parse the Lisbon snapshot date from the Inside Airbnb data page"
     end
   end
