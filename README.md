@@ -11,13 +11,16 @@ bundle install
 bundle exec ruby run_me.rb
 ```
 
-The script prints overall and per-freguesia statistics and writes the detailed output to [`data_sources/data_transformed/result.csv`](data_sources/data_transformed/result.csv).
+Cada execução cria um diretório imutável `data/snapshots/<airbnb-date>__<official-download-date>/` com `metadata.json`, `summary.json`, `listings.csv`, `licence_groups.csv`, `freguesias.csv` e `report.html`. O histórico append-only fica em `data/history/summary.csv`. O PDF é opcional: `GENERATE_PDF=1 bundle exec ruby run_me.rb` (requer `wkhtmltopdf` ou `weasyprint`).
+
+O ID usa a data real máxima de `last_scraped` do snapshot Airbnb e a data do download do registo oficial. Runs existentes nunca são sobrescritos. `metadata.json` guarda URLs, datas, SHA-256, commit Git e versões da análise, metodologia e schema.
 
 Run the tests with:
 
 ```bash
 ruby -Itest test/al_ilegal_test.rb
 ruby -Itest test/spatial_clusters_test.rb
+ruby -Itest test/versioned_analysis_test.rb
 ```
 
 For project-specific working instructions and interpretation notes, see [`AGENTS.md`](AGENTS.md).

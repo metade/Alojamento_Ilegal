@@ -1,9 +1,17 @@
 require "uri"
 require "zlib"
 require "open-uri"
+require "date"
+require "json"
 
 module AlIlegal
   module Data
+    OFFICIAL_URL = "https://hub.arcgis.com/api/download/v1/items/4e62eb1977564991bd01e61d7aa8266f/csv?redirect=false&layers=6"
+
+    def self.airbnb_url(date = "2026-06-23")
+      "https://data.insideairbnb.com/portugal/lisbon/lisbon/#{date}/data/listings.csv.gz"
+    end
+
     def self.prepare!
       [prepare_airbnb!, prepare_alojamentos_locais!]
     end
@@ -13,8 +21,7 @@ module AlIlegal
       path = "data_sources/Estabelecimentos_de_Alojamento_Local-#{date}.csv"
       return path if File.exist?(path)
 
-      url = "https://hub.arcgis.com/api/download/v1/items/4e62eb1977564991bd01e61d7aa8266f/csv?redirect=false&layers=6"
-      download_data = URI.open(url) do |remote_file|
+      download_data = URI.open(OFFICIAL_URL) do |remote_file|
         JSON.parse(remote_file.read)
       end
       csv_url = download_data["resultUrl"]
@@ -33,7 +40,7 @@ module AlIlegal
       return path if File.exist?(path)
       puts "  ... downloading airbnb data"
 
-      airbnb_data_url = "https://data.insideairbnb.com/portugal/lisbon/lisbon/#{date}/data/listings.csv.gz"
+      airbnb_data_url = airbnb_url(date)
 
       URI.open(airbnb_data_url) do |remote_file|
         Zlib::GzipReader.wrap(remote_file) do |gz|

@@ -1,0 +1,42 @@
+name: Análise trimestral
+
+on:
+  schedule:
+    - cron: '0 7 1 1,4,7,10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - name: Testes
+        run: |
+          ruby -Itest test/al_ilegal_test.rb
+          ruby -Itest test/spatial_clusters_test.rb
+      - name: Executar análise e gerar relatório
+        run: GENERATE_PDF=1 bundle exec ruby run_me.rb
+      - name: Publicar outputs versionados
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add data/snapshots data/history
+          git diff --cached --quiet || git commit -m "Atualiza análise trimestral"
+          git push
+      - name: Artefactos para debugging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alojamento-ilegal-run
+          path: |
+            data/snapshots
+            data/history
