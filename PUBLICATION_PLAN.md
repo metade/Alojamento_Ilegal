@@ -204,6 +204,17 @@ Tarefas:
 
 Critério de conclusão: uma execução automática publica exclusivamente o artefacto sanitizado.
 
+Implementação concluída:
+
+- [x] O workflow trimestral executa explicitamente o modo público e faz commit apenas de `data/snapshots/` e `data/history/`, nunca de dados locais ou do site gerado.
+- [x] O site é construído a partir de `data/snapshots/` e enviado como artefacto do GitHub Pages; o deployment ocorre num job separado com apenas `pages: write`, `id-token: write` e `actions: read`.
+- [x] Actions de terceiros estão fixadas por SHA completo.
+- [x] O gate verifica outputs públicos e o artefacto final, incluindo modo `public`, padrões de URLs/identificadores, referências a fontes locais e presença de `NOTICE`.
+- [x] O ensaio local do construtor, gates, sintaxe e testes terminou com sucesso; a inspeção manual confirmou que o site contém apenas o índice, runs públicos, licença e atribuição.
+- [x] A ativação efetiva do Pages/agendamento fica limitada à configuração do repositório no GitHub; o workflow está preparado para deployment por Actions.
+
+Critério de conclusão: cumprido para o fluxo versionado e o artefacto local. A execução real no GitHub requer apenas ativar GitHub Pages com a origem “GitHub Actions”.
+
 ## Ordem recomendada
 
 1. Fluxo de dados e schemas.

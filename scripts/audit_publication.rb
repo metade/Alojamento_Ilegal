@@ -2,8 +2,10 @@
 # frozen_string_literal: true
 
 require "open3"
+require "json"
 
 PUBLIC_ROOTS = ["data/snapshots/", "data/history/"].freeze
+ARTIFACT_ROOTS = ["site/"].freeze
 PRIVATE_PATHS = [
   %r{\Adata_sources/},
   %r{\Adata/private/},
@@ -22,6 +24,8 @@ FORBIDDEN_PUBLIC_FIELDS = %w[
   licensa_raw
 ].freeze
 LISTING_URL = %r{https?://[^\s"']+/(?:rooms|users)/}i
+AIRBNB_IDENTIFIER = %r{(?:airbnb\.[^\s"']+/(?:rooms|users)/|(?:listing|host)_id\s*[,":])}i
+RAW_SOURCE_PATH = %r{(?:data_sources|data/private|tmp)(?:/|\\)}i
 
 def tracked_files
   output, status = Open3.capture2("git", "ls-files", "-z")
@@ -32,6 +36,10 @@ end
 
 def public_file?(path)
   PUBLIC_ROOTS.any? { |root| path.start_with?(root) }
+end
+
+def artifact_file?(path)
+  ARTIFACT_ROOTS.any? { |root| path.start_with?(root) }
 end
 
 def file_text(path)
@@ -48,7 +56,7 @@ def audit_worktree
       errors << "ficheiro local/detalhado tracked: #{path}"
       next
     end
-    next unless public_file?(path)
+    next unless public_file?(path) || artifact_file?(path)
 
     text = file_text(path)
     next unless text
@@ -58,7 +66,20 @@ def audit_worktree
     end
     errors << "campo proibido em #{path}: #{fields.join(', ')}" unless fields.empty?
     errors << "URL de anúncio em #{path}" if text.match?(LISTING_URL)
+    errors << "padrão de identificador em #{path}" if text.match?(AIRBNB_IDENTIFIER)
+    errors << "referência a fonte local em #{path}" if text.match?(RAW_SOURCE_PATH)
+
+    if artifact_file?(path) && File.basename(path) == "metadata.json"
+      begin
+        metadata = JSON.parse(text)
+        errors << "modo não público em #{path}" unless metadata["mode"] == "public"
+      rescue JSON::ParserError
+        errors << "metadata inválido em #{path}"
+      end
+    end
   end
+
+  errors << "atribuição em falta: NOTICE" unless tracked_files.include?("site/NOTICE")
 
   errors
 end
@@ -86,15 +107,54 @@ def audit_history
       fields = FORBIDDEN_PUBLIC_FIELDS & header
       errors << "#{commit[0, 12]} campo proibido em #{path}: #{fields.join(', ')}" unless fields.empty?
       errors << "#{commit[0, 12]} URL de anúncio em #{path}" if text.match?(LISTING_URL)
+      errors << "#{commit[0, 12]} padrão de identificador em #{path}" if text.match?(AIRBNB_IDENTIFIER)
     end
   end
 
   errors
 end
 
+def audit_artifact(root)
+  errors = []
+  files = Dir.glob(File.join(root, "**", "*"), File::FNM_DOTMATCH).select { |path| File.file?(path) }
+  errors << "artefacto vazio: #{root}" if files.empty?
+
+  files.each do |path|
+    relative = path.delete_prefix("#{root}/")
+    errors << "ficheiro local/bruto no artefacto: #{relative}" if relative.match?(RAW_SOURCE_PATH)
+    text = file_text(path)
+    next unless text
+
+    header = text.lines.first.to_s.split(",").map { |value| value.strip.downcase }
+    fields = FORBIDDEN_PUBLIC_FIELDS & header
+    errors << "campo proibido em #{relative}: #{fields.join(', ')}" unless fields.empty?
+    errors << "URL de anúncio em #{relative}" if text.match?(LISTING_URL)
+    errors << "padrão de identificador em #{relative}" if text.match?(AIRBNB_IDENTIFIER)
+    errors << "referência a fonte local em #{relative}" if text.match?(RAW_SOURCE_PATH)
+
+    if File.basename(path) == "metadata.json"
+      begin
+        metadata = JSON.parse(text)
+        errors << "modo não público em #{relative}" unless metadata["mode"] == "public"
+      rescue JSON::ParserError
+        errors << "metadata inválido em #{relative}"
+      end
+    end
+  end
+
+  notice = File.join(root, "NOTICE")
+  errors << "atribuição em falta: #{root}/NOTICE" unless File.file?(notice)
+  errors
+end
+
 history = ARGV.delete("--history")
+artifact = if (index = ARGV.index("--artifact"))
+             ARGV.delete_at(index)
+             ARGV.delete_at(index)
+           end
 errors = audit_worktree
 errors.concat(audit_history) if history
+errors.concat(audit_artifact(artifact)) if artifact
 
 if errors.empty?
   puts history ? "Auditoria da árvore e do histórico: OK" : "Auditoria dos outputs publicáveis: OK"

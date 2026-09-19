@@ -20,5 +20,6 @@
   "git_commit": "67c1193b0b36a0e78f7d1ed29ba8bb395f853932",
   "analysis_version": "2.0.0",
   "methodology_version": "1.0.0",
-  "output_schema_version": "2.0.0"
+  "output_schema_version": "2.0.0",
+  "mode": "public"
 }

@@ -61,8 +61,8 @@ ruby scripts/build_site.rb
 O resultado fica em `site/` e inclui apenas a página inicial, relatórios HTML,
 CSVs agregados, metadata, licença e avisos de atribuição. Datasets brutos,
 resultados locais e caches não são copiados. O diretório `site/` pode ser usado
-como artefacto de um deployment estático; a publicação automática será tratada
-na etapa seguinte do plano.
+como artefacto de um deployment estático. O workflow trimestral constrói e
+valida esse diretório antes de o publicar no GitHub Pages.
 
 ## Testes
 
@@ -90,7 +90,7 @@ O primeiro comando verifica os ficheiros publicáveis na árvore atual; o segund
 O repositório pode permanecer privado enquanto um deployment separado publica o
 conteúdo sanitizado de `site/`.
 
-Os artefactos do GitHub Actions têm retenção limitada; os snapshots commitados em `data/snapshots/` e o histórico em `data/history/` são a fonte permanente do projeto. Datasets brutos em `data_sources/`, resultados detalhados em `data/private/` e caches em `tmp/` continuam fora do Git por defeito. Os CSVs dos snapshots são agregados e não contêm identificadores de anúncios, anfitriões, nomes, endereços, coordenadas ou valores de licença individuais.
+O workflow trimestral faz commit apenas dos outputs públicos sanitizados em `data/snapshots/` e `data/history/`; o site é publicado como artefacto separado através do GitHub Pages, depois de executar testes, construir o site e passar os gates de publicação. Os snapshots commitados e o histórico são a fonte permanente do projeto. Datasets brutos em `data_sources/`, resultados detalhados em `data/private/` e caches em `tmp/` continuam fora do Git por defeito. Os CSVs dos snapshots são agregados e não contêm identificadores de anúncios, anfitriões, nomes, endereços, coordenadas ou valores de licença individuais.
 
 ## Dados e método
 
