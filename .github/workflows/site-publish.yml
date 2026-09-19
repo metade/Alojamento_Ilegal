@@ -1,0 +1,58 @@
+name: Publicar site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # The quarterly workflow builds Pages in the same run as its analysis.
+    # This job is for human/main pushes and manual site-only publishes.
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name == 'workflow_dispatch' ||
+       !startsWith(github.event.head_commit.message, 'Atualiza análise trimestral'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ruby/setup-ruby@866b91cc020931c510d42e43e498a7f07d335f60 # v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - name: Testes
+        run: |
+          bundle exec ruby -Itest test/al_ilegal_test.rb
+          bundle exec ruby -Itest test/spatial_clusters_test.rb
+          bundle exec ruby -Itest test/versioned_analysis_test.rb
+      - name: Construir site público
+        run: bundle exec ruby scripts/build_site.rb
+      - name: Gate do artefacto de publicação
+        run: bundle exec ruby scripts/audit_publication.rb --artifact site
+      - name: Upload do site sanitizado
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
