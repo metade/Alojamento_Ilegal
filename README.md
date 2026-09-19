@@ -29,6 +29,8 @@ Os resultados locais incluem diagnósticos como `host_id`, coordenadas e valores
 bundle exec ruby run_me.rb --mode public
 ```
 
+Para uma execução automatizada repetida, `bundle exec ruby run_me.rb --mode public --reuse-existing` reutiliza um run público já existente sem o reescrever e permite que a publicação do site continue.
+
 O modo público cria o run em:
 
 ```text

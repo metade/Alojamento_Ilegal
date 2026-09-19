@@ -43,8 +43,10 @@ module AlIlegal
           mode = Regexp.last_match(1)
         when "--force"
           # Parsed separately by force?; accept it here so option validation succeeds.
+        when "--reuse-existing"
+          # Parsed separately by reuse_existing?; accept it here so option validation succeeds.
         when "-h", "--help"
-          puts "Usage: bundle exec ruby run_me.rb [--mode public|local] [--force]"
+          puts "Usage: bundle exec ruby run_me.rb [--mode public|local] [--force] [--reuse-existing]"
           exit 0
         else
           raise ArgumentError, "Unknown option: #{argument}"
@@ -58,6 +60,10 @@ module AlIlegal
 
     def force?(arguments)
       arguments.include?("--force")
+    end
+
+    def reuse_existing?(arguments)
+      arguments.include?("--reuse-existing")
     end
   end
 
@@ -197,6 +203,18 @@ module AlIlegal
 
   module Analysis
     module_function
+
+    def run_id_for(airbnb_path:, official_path:)
+      airbnb_date = File.basename(airbnb_path)[/(\d{4}-\d{2}-\d{2})/, 1]
+      official_date = File.basename(official_path)[/(\d{4}-\d{2}-\d{2})/, 1] || File.mtime(official_path).to_date.to_s
+      "#{airbnb_date}__#{official_date}"
+    end
+
+    def existing_public_run(airbnb_path:, official_path:, output_root: "data/snapshots")
+      run_id = run_id_for(airbnb_path: airbnb_path, official_path: official_path)
+      path = File.join(output_root, run_id)
+      Dir.exist?(path) ? {run_id: run_id, path: path} : nil
+    end
 
     def run(airbnb_path:, official_path:, output_root: nil, history_path: nil, generate_pdf: false, mode: "local", force: false)
       raise ArgumentError, "Mode must be public or local" unless %w[public local].include?(mode)

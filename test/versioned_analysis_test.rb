@@ -5,6 +5,20 @@ require_relative "../lib/al_ilegal"
 class VersionedAnalysisTest < Minitest::Test
   HEADERS = %w[neighbourhood_group_cleansed license listing_url neighbourhood_cleansed name latitude longitude room_type property_type bedrooms host_id last_scraped]
 
+  def test_existing_public_run_is_detected_without_mutating_it
+    Dir.mktmpdir do |dir|
+      airbnb = File.join(dir, "listings-2026-06-23.csv")
+      official = File.join(dir, "official-2026-09-19.csv")
+      output_root = File.join(dir, "snapshots")
+      FileUtils.mkdir_p(File.join(output_root, "2026-06-23__2026-09-19"))
+
+      existing = AlIlegal::Analysis.existing_public_run(airbnb_path: airbnb, official_path: official, output_root: output_root)
+
+      assert_equal "2026-06-23__2026-09-19", existing[:run_id]
+      assert_equal File.join(output_root, existing[:run_id]), existing[:path]
+    end
+  end
+
   def test_creates_immutable_versioned_outputs_and_history
     Dir.mktmpdir do |dir|
       airbnb = File.join(dir, "listings.csv")
