@@ -50,6 +50,20 @@ O histórico append-only está em `data/history/summary.csv`. Runs existentes nu
 GENERATE_PDF=1 bundle exec ruby run_me.rb --mode public
 ```
 
+## Site público
+
+O site estático publicável é montado a partir dos snapshots já versionados:
+
+```bash
+ruby scripts/build_site.rb
+```
+
+O resultado fica em `site/` e inclui apenas a página inicial, relatórios HTML,
+CSVs agregados, metadata, licença e avisos de atribuição. Datasets brutos,
+resultados locais e caches não são copiados. O diretório `site/` pode ser usado
+como artefacto de um deployment estático; a publicação automática será tratada
+na etapa seguinte do plano.
+
 ## Testes
 
 ```bash
@@ -72,6 +86,9 @@ O primeiro comando verifica os ficheiros publicáveis na árvore atual; o segund
 `.github/workflows/quarterly-analysis.yml` permite execução trimestral e manual. O workflow executa os testes, descarrega as fontes, chama explicitamente `run_me.rb --mode public`, publica os outputs versionados no repositório e guarda artefactos temporários para debugging.
 
 `.github/workflows/publication-audit.yml` executa automaticamente a verificação de segurança dos outputs em pushes e pull requests.
+
+O repositório pode permanecer privado enquanto um deployment separado publica o
+conteúdo sanitizado de `site/`.
 
 Os artefactos do GitHub Actions têm retenção limitada; os snapshots commitados em `data/snapshots/` e o histórico em `data/history/` são a fonte permanente do projeto. Datasets brutos em `data_sources/`, resultados detalhados em `data/private/` e caches em `tmp/` continuam fora do Git por defeito. Os CSVs dos snapshots são agregados e não contêm identificadores de anúncios, anfitriões, nomes, endereços, coordenadas ou valores de licença individuais.
 

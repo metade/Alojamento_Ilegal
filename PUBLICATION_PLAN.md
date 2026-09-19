@@ -153,7 +153,7 @@ Implementação concluída:
 
 Critério de conclusão: cumprido. É possível compreender cada tipo de sinal sem identificar facilmente uma propriedade ou operador.
 
-## Sessão 5 — Preparar o site público
+## Sessão 5 — Preparar o site público ✅ concluída (2026-09-18)
 
 Objetivo: publicar um site estático com relatórios sanitizados.
 
@@ -173,7 +173,15 @@ Tarefas:
 - Rever o nome e os títulos públicos para uma linguagem inquisitiva e não acusatória.
 - Decidir se o repositório permanece privado enquanto o site é público.
 
-Critério de conclusão: uma inspeção do artefacto final não encontra dados de anúncios individuais nem dados pessoais óbvios.
+Implementação concluída:
+
+- [x] `scripts/build_site.rb` monta um site estático a partir dos snapshots públicos versionados.
+- [x] A página inicial documenta objetivo, fontes e atribuição, metodologia, limitações, aviso não jurídico, correções e datas dos snapshots.
+- [x] Cada run publicado inclui apenas HTML, CSVs agregados e metadata; `LICENSE` e `NOTICE` acompanham o site.
+- [x] O construtor não copia `data_sources/`, `data/private/` ou caches para o artefacto.
+- [x] A documentação regista que o repositório pode permanecer privado enquanto um deployment separado publica `site/`.
+
+Critério de conclusão: cumprido. O artefacto é gerado apenas a partir de `data/snapshots/` e a auditoria de publicação confirma que os ficheiros publicáveis não contêm campos proibidos nem URLs de anúncios.
 
 ## Sessão 6 — Automatização e publicação
 
