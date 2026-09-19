@@ -3,6 +3,7 @@ require "zlib"
 require "open-uri"
 require "date"
 require "json"
+require "fileutils"
 
 module AlIlegal
   module Data
@@ -27,6 +28,7 @@ module AlIlegal
       end
       csv_url = download_data["resultUrl"]
 
+      FileUtils.mkdir_p(File.dirname(path))
       URI.open(csv_url) do |remote_file|
         File.write(path, remote_file.read)
       end
@@ -41,6 +43,7 @@ module AlIlegal
       return path if File.exist?(path)
       puts "  ... downloading airbnb data"
 
+      FileUtils.mkdir_p(File.dirname(path))
       URI.open(airbnb_data_url) do |remote_file|
         Zlib::GzipReader.wrap(remote_file) do |gz|
           File.write(path, gz.read)
