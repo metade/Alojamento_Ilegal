@@ -12,7 +12,7 @@ require "time"
 
 module AlIlegal
   ANALYSIS_VERSION = "2.1.0"
-  OUTPUT_SCHEMA_VERSION = "3.0.0"
+  OUTPUT_SCHEMA_VERSION = "3.1.0"
   METHODOLOGY_VERSION = "1.0.0"
   PUBLIC_CSV_SCHEMAS = {
     "listings.csv" => %w[freguesia classification listings identifiable_licences establishments_estimate],
@@ -228,7 +228,7 @@ module AlIlegal
 
       groups = licence_groups(listings, official)
       freguesias = freguesia_rows(listings)
-      summary = summary(listings, groups, dates, run_id, mode)
+      summary = summary(listings, groups, dates, run_id, mode, official: official)
       summary[:historical_comparisons] = historical_comparisons(history_path, summary)
       metadata = metadata(airbnb_path, official_path, dates, run_id, mode)
       FileUtils.mkdir_p(run_dir)
@@ -374,9 +374,10 @@ module AlIlegal
     def freguesia_rows(listings)
       listings.group_by { |row| row[:bairro].to_s }.map { |name, rows| {freguesia: name, listings: rows.size, identifiable_licences: rows.count { |r| !r[:licensa].to_s.empty? }, establishments_estimate: AlIlegal.establishment_estimate(rows)} }.sort_by { |r| r[:freguesia] }
     end
-    def summary(listings, groups, dates, run_id, mode)
+    def summary(listings, groups, dates, run_id, mode, official: {})
       counts = groups.group_by { |g| g[:classification] }.transform_values(&:size)
       {run_id: run_id, source_dates: dates, methodology_version: METHODOLOGY_VERSION, listings: listings.size, licence_groups: groups.size,
+       official_registers_lisbon: official.values.count { |record| record["Concelho"] == "Lisboa" },
        establishment_estimate: AlIlegal.establishment_estimate(listings), classifications: counts, mode: mode, generated_at: Time.now.utc.iso8601}
     end
     def metadata(airbnb, official, dates, run_id, mode)

@@ -1,127 +1,117 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require "csv"
 require "fileutils"
 require "json"
 
 ROOT = File.expand_path("..", __dir__)
-SNAPSHOTS_DIR = File.join(ROOT, "data", "snapshots")
-SITE_DIR = File.join(ROOT, "site")
+SNAPSHOTS = File.join(ROOT, "data", "snapshots")
+SITE = File.join(ROOT, "site")
+QUOTES = File.join(ROOT, "site_content", "quotes.json")
+PUBLIC_FILES = %w[metadata.json summary.json listings.csv licence_groups.csv freguesias.csv report.html].freeze
+LABELS = {
+  "sem licença identificável" => "Sem licença identificável",
+  "licença repetida em várias localizações" => "Licença repetida em diferentes localizações",
+  "licença oficial fora de Lisboa" => "Licença registada fora de Lisboa",
+  "licença única em Lisboa" => "Licença única em Lisboa",
+  "provável estabelecimento com anúncios múltiplos" => "Provável estabelecimento com anúncios múltiplos",
+  "licença repetida na mesma localização" => "Licença repetida na mesma localização"
+}.freeze
 
-PUBLIC_FILES = %w[
-  metadata.json
-  summary.json
-  listings.csv
-  licence_groups.csv
-  freguesias.csv
-  report.html
-].freeze
-
-def html_escape(value)
-  value.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+def h(value); value.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;") end
+def n(value); value.to_i.to_s.reverse.gsub(/\d{3}(?=\d)/, '\\0 ').reverse end
+def slug(value); value.to_s.downcase.tr("áàâãäéêëíìîïóôõöúùûüç", "aaaaaeeeiiiioooouuuuc").gsub(/[^a-z0-9]+/, "-").gsub(/\A-|-$|\A\z/, "") end
+def pretty(value)
+  {"Alcntara" => "Alcântara", "Belm" => "Belém", "Misericrdia" => "Misericórdia", "Parque das Naes" => "Parque das Nações", "Penha de Frana" => "Penha de França", "Santo Antnio" => "Santo António", "So Domingos de Benfica" => "São Domingos de Benfica", "So Vicente" => "São Vicente"}.fetch(value.to_s, value.to_s)
 end
 
-snapshot_dirs = Dir.children(SNAPSHOTS_DIR)
-  .map { |name| File.join(SNAPSHOTS_DIR, name) }
-  .select { |path| File.directory?(path) }
-  .sort.reverse
-
-abort "Não existem snapshots públicos em #{SNAPSHOTS_DIR}." if snapshot_dirs.empty?
-
-FileUtils.rm_rf(SITE_DIR)
-FileUtils.mkdir_p(File.join(SITE_DIR, "runs"))
-
-snapshot_dirs.each do |source_dir|
-  run_id = File.basename(source_dir)
-  destination_dir = File.join(SITE_DIR, "runs", run_id)
-  FileUtils.mkdir_p(destination_dir)
-
-  PUBLIC_FILES.each do |filename|
-    source = File.join(source_dir, filename)
-    abort "Ficheiro público em falta: #{source}" unless File.file?(source)
-
-    FileUtils.cp(source, File.join(destination_dir, filename))
+def counts(rows)
+  rows.each_with_object(Hash.new { |h, k| h[k] = {listings: 0, licences: 0, estimate: 0} }) do |row, out|
+    key = row["classification"]
+    out[key][:listings] += row["listings"].to_i
+    out[key][:licences] += row["identifiable_licences"].to_i
+    out[key][:estimate] += row["establishments_estimate"].to_i
   end
 end
 
-latest_id = File.basename(snapshot_dirs.first)
-latest_metadata = JSON.parse(File.read(File.join(SITE_DIR, "runs", latest_id, "metadata.json")))
-run_links = snapshot_dirs.map do |source_dir|
-  run_id = File.basename(source_dir)
-  metadata = JSON.parse(File.read(File.join(SITE_DIR, "runs", run_id, "metadata.json")))
+def official_count(summary, run_id)
+  return summary["official_registers_lisbon"] if summary["official_registers_lisbon"]
+  date = run_id[/__([0-9-]+)\z/, 1]
+  path = Dir[File.join(ROOT, "data_sources", "Estabelecimentos_de_Alojamento_Local-#{date}.csv")].first
+  return nil unless path
+  CSV.foreach(path, headers: true).count { |row| row["Concelho"] == "Lisboa" }
+end
+
+def css
+  <<~CSS
+  :root{--p:#f3efe5;--i:#17202a;--b:#176b87;--y:#d9a514;--t:#b7472a;--s:#73806c;--line:#17202a2e;--serif:"DM Serif Display",Georgia,serif;--sans:Inter,system-ui,sans-serif}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--p);color:var(--i);font:16px/1.55 var(--sans)}a{color:inherit}.wrap{width:min(1440px,calc(100% - 48px));margin:auto}.site-header{position:sticky;top:0;z-index:5;background:#f3efe5ee;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.header-inner{min-height:72px;display:flex;justify-content:space-between;align-items:center}.brand{display:flex;gap:12px;align-items:center;text-decoration:none}.brand small,.brand strong{display:block}.brand small{font-size:9px;color:var(--b);letter-spacing:.15em;text-transform:uppercase}.brand strong{font-size:14px}.al-mark{width:42px;height:42px;border:3px solid var(--i);display:grid;place-items:center;font-weight:800;position:relative;overflow:visible}.al-mark:after{content:"?";position:absolute;right:-11px;bottom:-20px;color:var(--t);font:25px/1 var(--serif);background:var(--p);padding:0 1px}nav{display:flex;gap:24px}.nav-link{font-size:12px;text-decoration:none;color:#17202a99}.nav-link:hover{color:var(--i)}.tile-rule{height:7px;background:repeating-linear-gradient(90deg,var(--b) 0 24px,var(--p) 24px 28px,var(--y) 28px 36px,var(--p) 36px 40px)}.calcada{background-image:radial-gradient(ellipse 8px 5px at 50% 50%,#17202a12 0 46%,transparent 52%),radial-gradient(ellipse 8px 5px at 50% 50%,#17202a0b 0 46%,transparent 52%);background-size:18px 12px,18px 12px;background-position:0 0,9px 6px}.hero{min-height:calc(100vh - 79px);padding:130px 0 40px}.hero-grid,.district-grid,.split{display:grid;grid-template-columns:1.2fr .8fr;gap:60px;align-items:end}.display{font:normal var(--serif);letter-spacing:-.045em;line-height:.92;margin:0}.display em{color:#17202a59}.hero h1{font-size:clamp(56px,8.5vw,145px);max-width:1100px}.display-medium{font-size:clamp(50px,6vw,92px)}.display-small{font-size:clamp(42px,4vw,66px)}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--b)}.chip{display:inline-block;padding:7px 10px;border:1px solid #176b8759;margin-bottom:28px}.hero-dek{max-width:590px;margin:48px 0 0;font-size:20px;color:#17202aae}.hero-number{font:clamp(90px,15vw,230px)/.7 var(--serif);letter-spacing:-.08em;white-space:nowrap;text-align:right}.hero-number b{color:var(--t);font-size:.42em;vertical-align:top}.scroll-cue{margin-top:75px;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#17202a99}.tejo-line{height:65px;border-top:1px solid #176b874d;position:relative;margin-top:55px}.tejo-line:after{content:"";position:absolute;inset:25px 0 0;background:#b9d8df8c;clip-path:polygon(0 30%,12% 5%,24% 34%,38% 8%,51% 32%,66% 0,79% 27%,90% 10%,100% 26%,100% 100%,0 100%)}.tejo-line span{position:absolute;right:0;top:28px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--b)}.chapter{padding:125px 0}.chapter-paper{background:#fff5;border-block:1px solid var(--line)}.chapter-intro,.dark-intro,.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-bottom:60px}.chapter-intro p,.dark-intro p,.method-copy{color:#17202aa3}.source-grid{display:grid;grid-template-columns:repeat(3,1fr);border-block:1px solid var(--line)}.source-card{padding:32px 28px;min-height:350px;border-right:1px solid var(--line)}.source-card:last-child{border:0}.source-card h3{font:48px/1 var(--serif);margin:45px 0 12px}.source-card p{color:#17202aa3}.source-card small{display:block;color:var(--b);margin-top:35px;font-size:12px}.source-symbol{font:42px var(--serif);margin-top:25px;color:var(--b)}.source-card.platform .source-symbol{color:var(--y)}.source-card.platform h3{color:var(--y)}.sticky-copy{position:sticky;top:110px;align-self:start}.sticky-copy p{max-width:400px;color:#17202aa3;margin-top:28px}.diagram{border:1px solid var(--line);padding:38px;background:#fff6}.diagram-label,.caption{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#17202a80}.listing-stack{display:grid;gap:8px;margin-top:34px}.listing-stack span,.establishment{padding:16px;background:var(--p);border:1px solid var(--line);display:flex;justify-content:space-between}.listing-stack b{color:var(--y);font:13px monospace}.diagram-arrow{text-align:center;color:var(--t);font-size:28px;padding:16px}.establishment{display:grid;text-align:center;border:2px solid var(--b);gap:6px}.establishment b{color:var(--b);font:13px monospace}.establishment strong{font:28px var(--serif)}.cross-grid{display:grid;grid-template-columns:1fr 140px 1fr;gap:28px;align-items:center;margin:60px 0 35px}.cross-column{display:grid;gap:10px}.cross-column>div{padding:16px 18px;border-left:4px solid var(--b);background:#fff7}.platform-border>div{border-left:0;border-right:4px solid var(--y);text-align:right}.cross-lines{color:var(--t);font-size:28px;line-height:2;text-align:center}.chapter-dark{background:var(--i);color:var(--p)}.light{color:#f3efe599}.chapter-dark .display em{color:#f3efe552}.finding-grid{display:grid;gap:1px;background:#f3efe526}.finding{display:grid;grid-template-columns:190px 1fr;gap:30px;padding:34px;background:var(--i)}.finding-number{color:var(--y);font:68px/.9 var(--serif)}.finding-mark{color:var(--y);font:28px var(--serif)}.finding h3{font:31px/1 var(--serif);margin:12px 0}.finding p{color:#f3efe599;max-width:650px}.notice-dark{border-top:1px solid #f3efe526;padding-top:22px;margin-top:55px;color:#f3efe5a8}.waterfall{margin-top:60px}.water-row{display:grid;grid-template-columns:230px 1fr 160px;gap:20px;align-items:center;border-top:1px solid var(--line);padding:23px 0}.water-row i,.compare-row i{height:24px;background:var(--y);width:var(--bar);display:block}.water-row strong{font:43px var(--serif);text-align:right}.water-row.result{border-bottom:1px solid var(--line);padding-block:30px}.result i{background:var(--b);height:34px}.water-row small{display:block;font-size:12px;color:#17202a80}.compare{max-width:900px;margin:55px auto 0}.compare-row{display:grid;grid-template-columns:180px 1fr 80px;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}.compare-row i{height:14px;background:var(--s)}.compare-row strong{text-align:right}.compare-row.current{color:var(--t);font-weight:700}.compare-row.current i{background:var(--t)}.lisbon-schematic{min-height:300px;background:#e9e4d8;border:1px solid var(--line);padding:35px;position:relative}.tejo-block{position:absolute;bottom:0;inset-inline:0;height:65px;background:#b9d8df8c}.districts{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px;transform:rotate(-5deg);margin-top:35px}.districts span{padding:15px;background:#176b8740;font-size:11px;text-transform:uppercase}.districts span:nth-child(2n){background:#d9a51459;margin-top:18px}.lisbon-schematic small{position:absolute;bottom:12px;left:15px;font-size:10px;text-transform:uppercase}.conclusion-grid,.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;border-block:1px solid var(--line);padding:35px 0;margin-top:65px}.conclusion-grid strong{display:block;font:clamp(55px,6vw,90px) var(--serif);letter-spacing:-.06em;margin:18px 0}.conclusion-grid p{max-width:250px;color:#17202a99}.final-line{font:32px/1.2 var(--serif);max-width:800px;margin-top:65px}.method-strip,.site-footer{border-top:1px solid var(--line);padding:60px 0}.footer-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:30px;align-items:start}.method-strip h2{font:36px var(--serif);line-height:1;margin:12px 0}.provenance{max-width:1440px;margin:auto;padding:20px 24px;border-top:1px solid var(--line);font-size:11px;color:#17202a99}.quote-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:55px}.quote-card{border-top:1px solid var(--line);padding-top:18px}.quote-card blockquote{font:28px/1.1 var(--serif)}.empty-source{display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;border-block:1px solid var(--line);padding:25px 0;margin-top:45px}.quote-mark{font:55px var(--serif);color:var(--t)}.district-hero,.district-index-hero,.method-hero{padding:105px 0 85px}.district-mark{width:270px;height:270px;border:3px solid var(--i);display:grid;place-items:center;align-content:center;gap:8px;transform:rotate(-4deg)}.district-mark span{font:70px var(--serif);color:var(--b)}.district-mark b{font:44px var(--serif)}.metric{border-top:3px solid var(--i);padding-top:16px}.metric.platform{border-color:var(--y)}.metric.official{border-color:var(--b)}.metric-value{font:clamp(48px,6vw,88px)/1 var(--serif);letter-spacing:-.06em}.metric-label{text-transform:uppercase;letter-spacing:.12em;font-size:11px;margin-top:9px}.composition{border-top:1px solid var(--line)}.composition-row{display:grid;grid-template-columns:1fr 120px;border-bottom:1px solid var(--line);padding:18px 0}.composition-row strong{text-align:right;font:30px var(--serif)}.map-placeholder{min-height:350px;border:1px solid #f3efe533;display:grid;place-items:center;text-align:center;color:#f3efe599;position:relative;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.map-grid{position:absolute;inset:22px;display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.map-grid i{height:18px;background:var(--y);align-self:end;opacity:.35}.district-list{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.district-card{display:flex;flex-direction:column;min-height:245px;padding:22px;border:1px solid var(--line);background:#fff5;text-decoration:none}.district-card:hover{background:#fff;transform:translateY(-3px)}.shape-glyph{height:90px;display:grid;place-items:center;background:#176b8714;color:var(--b);font:60px var(--serif);transform:rotate(-3deg);margin-bottom:auto}.district-card strong{font:38px var(--serif);margin-top:12px}.district-card small{font-size:12px;color:#17202a99}.method-copy p{font-size:18px;color:#17202aae}.method-copy dl{display:grid;grid-template-columns:160px 1fr;gap:12px;border-block:1px solid var(--line);padding:22px 0}.method-copy dt{font-size:11px;text-transform:uppercase;color:var(--b);letter-spacing:.1em}.method-copy dd{margin:0}.table-wrap{overflow:auto;margin-top:35px}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:15px 12px;border-bottom:1px solid var(--line)}th{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#17202a99}td{text-align:right}.data-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}.filter{border:1px solid var(--line);background:transparent;padding:8px 12px;font-size:12px;cursor:pointer}.filter.is-active,.filter:hover{background:var(--i);color:var(--p)}.skip-link{position:absolute;left:8px;top:8px;transform:translateY(-150%);background:var(--p);padding:8px;z-index:10}.skip-link:focus{transform:none}@media(max-width:850px){.wrap{width:min(calc(100% - 32px),680px)}.header-inner{min-height:64px}nav{gap:12px}.nav-link{font-size:11px}.hero{min-height:auto;padding-top:85px}.hero-grid,.district-grid,.split,.chapter-intro,.dark-intro,.method-grid{grid-template-columns:1fr;gap:38px}.hero-number{text-align:left;font-size:clamp(85px,23vw,150px)}.source-grid,.conclusion-grid,.metric-grid{grid-template-columns:1fr}.source-card{border-right:0;border-bottom:1px solid var(--line);min-height:0}.source-card:last-child{border-bottom:0}.sticky-copy{position:static}.cross-grid{grid-template-columns:1fr;gap:14px}.cross-lines{transform:rotate(90deg);height:65px}.finding{grid-template-columns:1fr}.water-row{grid-template-columns:1fr 80px}.water-row i{grid-column:1/-1;grid-row:2}.water-row strong{font-size:36px}.district-list{grid-template-columns:repeat(2,1fr)}.district-card{min-height:205px;padding:15px}.shape-glyph{height:65px;font-size:42px}.quote-grid{grid-template-columns:1fr}.empty-source{grid-template-columns:auto 1fr}.empty-source a{grid-column:2}.compare-row{grid-template-columns:130px 1fr 65px;font-size:12px}.footer-grid{grid-template-columns:1fr}.method-copy dl{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.district-card:hover{transform:none}}
+  CSS
+end
+
+def shell(title, body, active = nil, prefix = "")
+  nav = [["index.html", "Investigação"], ["freguesias/index.html", "Freguesias"], ["metodologia.html", "Metodologia"]].map { |url, label| "<a class=\"nav-link\" href=\"#{prefix}#{url}\">#{label}</a>" }.join
   <<~HTML
-    <li><a href="runs/#{html_escape(run_id)}/report.html">#{html_escape(run_id)}</a>
-      <span>(Airbnb: #{html_escape(metadata.fetch("source_dates").fetch("airbnb_snapshot_date"))}; registo descarregado em #{html_escape(metadata.fetch("source_dates").fetch("official_register_download_date"))})</span></li>
+    <!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Uma investigação de dados sobre o alojamento local em Lisboa."><title>#{h(title)} · AL em análise</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="#{prefix}assets/story.css"></head><body><a class="skip-link" href="#conteudo">Saltar para o conteúdo</a><header class="site-header"><div class="wrap header-inner"><a class="brand" href="#{prefix}index.html"><span class="al-mark">AL</span><span><strong>AL em análise</strong><small>Lisboa · dados &amp; investigação</small></span></a><nav aria-label="Navegação principal">#{nav}</nav></div></header><div class="tile-rule"></div><main id="conteudo">#{body}</main><footer class="site-footer"><div class="wrap footer-grid"><span>Alojamento Local em Análise</span><span>Dados públicos · indicadores para verificação</span><a href="#{prefix}metodologia.html">Metodologia →</a></div></footer></body></html>
   HTML
-end.join
+end
 
-index = <<~HTML
-  <!doctype html>
-  <html lang="pt">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Alojamento Local em Lisboa — indicadores para verificação</title>
-    <style>
-      :root { color-scheme: light; --ink: #243447; --muted: #526579; --blue: #123b5d; --pale: #edf4f8; }
-      body { font: 1rem/1.6 system-ui, sans-serif; max-width: 900px; margin: auto; padding: 1rem; color: var(--ink); }
-      header { background: var(--blue); color: white; padding: 2rem; border-radius: 14px; }
-      h1 { margin-top: 0; line-height: 1.15; }
-      section { margin: 2rem 0; }
-      .notice { border-left: 5px solid #d38b22; background: #fff7e8; padding: 1rem 1.25rem; }
-      .meta { color: var(--muted); }
-      a { color: #075a91; }
-      li { margin: .65rem 0; }
-      footer { border-top: 1px solid #d9e2e8; padding-top: 1rem; color: var(--muted); font-size: .9rem; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Alojamento Local em Lisboa</h1>
-      <p>Comparação de snapshots públicos para identificar indicadores que requerem verificação.</p>
-      <p>Último run: <a href="runs/#{html_escape(latest_id)}/report.html" style="color:#fff">#{html_escape(latest_id)}</a></p>
-    </header>
+def provenance(metadata, run_id, prefix = "")
+  date = metadata.fetch("source_dates")
+  "<div class=\"provenance\">Dados Airbnb: <strong>#{h(date['airbnb_snapshot_date'])}</strong> · registo descarregado: <strong>#{h(date['official_register_download_date'])}</strong> · <a href=\"#{prefix}runs/#{h(run_id)}/report.html\">relatório técnico</a></div>"
+end
 
-    <section class="notice">
-      <strong>Importante:</strong> os resultados são indicadores analíticos, não conclusões de ilegalidade, culpa ou incumprimento. Qualquer divergência deve ser confirmada junto das fontes oficiais.
-    </section>
+def home(summary, metadata, listings, freguesias, run_id, quotes)
+  by = counts(listings); official = official_count(summary, run_id); no = by["sem licença identificável"][:listings]; repeated = by["licença repetida em várias localizações"][:listings]; outside = by["licença oficial fora de Lisboa"][:listings]
+  top = freguesias.sort_by { |r| -r["listings"].to_i }.first(5)
+  quote = quotes.empty? ? "<div class=\"empty-source\"><span class=\"quote-mark\">“</span><span>Arquivo editorial preparado para citações verificadas.</span><a href=\"metodologia.html#fontes\">Como tratamos as fontes →</a></div>" : quotes.map { |q| "<article class=\"quote-card\"><div class=\"eyebrow\">#{h(q['date'])}</div><blockquote>#{h(q['excerpt'])}</blockquote><p>#{h(q['person'])} · #{h(q['source'])}</p><a href=\"#{h(q['url'])}\">Fonte externa ↗</a></article>" }.join
+  bars = top.map { |r| "<div class=\"compare-row\"><span>#{h(pretty(r['freguesia']))}</span><i style=\"--bar:#{(r['listings'].to_f / top.first['listings'].to_f * 100).round(1)}%\"></i><strong>#{n(r['listings'])}</strong></div>" }.join
+  body = <<~HTML
+    <section class="hero lisbon-tile"><div class="wrap hero-grid"><div><div class="eyebrow chip">Lisboa · uma investigação de dados</div><h1 class="display">Quantos alojamentos locais existem <em>realmente</em> em Lisboa?</h1><p class="hero-dek">É comum encontrar um número próximo dos <strong>11 mil</strong>. Mas registos, anúncios e estabelecimentos não são a mesma coisa.</p><p class="scroll-cue">↓ Desça para seguir a contagem</p></div><div class="hero-number"><span>11 000</span><b>?</b></div></div><div class="wrap tejo-line"><span>Lisboa · Tejo</span></div></section>
+    <section class="chapter chapter-paper"><div class="wrap"><div class="eyebrow">01 · O que se diz</div><h2 class="display display-medium">O número aparece.<br><em>A pergunta fica.</em></h2><div class="quote-grid">#{quote}</div></div></section>
+    <section class="chapter" id="investigacao"><div class="wrap"><div class="chapter-intro"><div><div class="eyebrow">02 · As três perspectivas</div><h2 class="display display-medium">O mesmo número.<br><em>Coisas diferentes.</em></h2></div><p>Antes de contar, precisamos de perceber o que cada fonte está a medir. A investigação cruza o discurso público, o registo oficial e os anúncios observados.</p></div><div class="source-grid"><article class="source-card"><div class="eyebrow">O que se diz</div><div class="source-symbol">“</div><h3>Notícias<br>e declarações</h3><p>Um enquadramento editorial, não uma contagem produzida por esta investigação.</p></article><article class="source-card"><div class="eyebrow">Registo oficial</div><div class="source-symbol">↓</div><h3>#{official ? n(official) : '—'}</h3><p>registos no concelho de Lisboa</p><small>Turismo de Portugal · RNAL</small></article><article class="source-card platform"><div class="eyebrow">Airbnb</div><div class="source-symbol">●</div><h3>#{n(summary['listings'])}</h3><p>anúncios no snapshot</p><small>Inside Airbnb · #{h(metadata['source_dates']['airbnb_snapshot_date'])}</small></article></div></div></section>
+    <section class="chapter"><div class="wrap split"><div class="sticky-copy"><div class="eyebrow">03 · O primeiro problema</div><h2 class="display display-small">#{n(summary['listings'])} anúncios não são #{n(summary['listings'])} alojamentos.</h2><p>O mesmo estabelecimento pode aparecer várias vezes. A análise agrupa anúncios com a mesma licença e na mesma localização, mas mantém separados os sinais que merecem investigação.</p></div><div class="diagram"><div class="diagram-label">Exemplo sintético · uma licença, vários anúncios</div><div class="listing-stack"><span>Quarto 1 <b>AL 67890</b></span><span>Quarto 2 <b>AL 67890</b></span><span>Quarto 3 <b>AL 67890</b></span></div><div class="diagram-arrow">↓</div><div class="establishment"><b>AL 67890</b><strong>1 provável estabelecimento?</strong><small>3 anúncios Airbnb</small></div><p class="caption">Uma estimativa analítica, não uma confirmação de identidade física.</p></div></div></section>
+    <section class="chapter chapter-paper"><div class="wrap"><div class="eyebrow">04 · O cruzamento</div><h2 class="display display-medium">Dois universos.<br><em>Uma ligação imperfeita.</em></h2><div class="cross-grid"><div class="cross-column"><span class="eyebrow">Turismo de Portugal</span><div>licença reconhecida</div><div>licença repetida</div><div>concelho oficial</div></div><div class="cross-lines">←────→<br>←─┬──→<br>  └──→</div><div class="cross-column platform-border"><span class="eyebrow">Airbnb</span><div>anúncio</div><div>quarto 1 · quarto 2</div><div>localização observada</div></div></div><p class="hero-dek">O número de licença é uma chave útil, mas não resolve sozinho a diferença entre anúncio, unidade e estabelecimento.</p></div></section>
+    <section class="chapter chapter-dark"><div class="wrap"><div class="dark-intro"><div><div class="eyebrow light">05 · Mas há anúncios que não encaixam</div><h2 class="display display-medium">Sinais para investigar.<br><em>Não conclusões automáticas.</em></h2></div><p>Ao cruzar Airbnb e RNAL, aparecem diferenças que precisam de confirmação. A linguagem é deliberadamente conservadora.</p></div><div class="finding-grid">#{[[no, 'Sem licença identificável', 'O anúncio não apresenta um número que consigamos reconhecer e normalizar como licença de AL.'], [repeated, 'Licença repetida em diferentes localizações', 'O mesmo número aparece associado a anúncios geograficamente separados.'], [outside, 'Licença registada fora de Lisboa', 'O anúncio está no dataset de Lisboa, mas o registo identificado pertence a outro concelho.']].map { |value, title, text| "<article class=\"finding\"><div class=\"finding-number\">#{n(value)}</div><div><div class=\"finding-mark\">#{title.start_with?('Sem') ? '?' : title.start_with?('Licença repetida') ? '↻' : '⌖'}</div><h3>#{title}</h3><p>#{text}</p></div></article>" }.join}</div><p class="notice-dark"><strong>Importante:</strong> são sinais para verificação. Não demonstram, por si só, ilegalidade, culpa ou incumprimento.</p></div></section>
+    <section class="chapter"><div class="wrap"><div class="eyebrow">06 · Construir uma estimativa</div><h2 class="display display-medium">Em vez de escolher um número,<br><em>mostramos como chegamos até ele.</em></h2><div class="waterfall"><div class="water-row"><span>Anúncios Airbnb</span><i style="--bar:100%"></i><strong>#{n(summary['listings'])}</strong></div><div class="water-row"><span>Agrupar categorias colapsáveis</span><i style="--bar:#{(summary['establishment_estimate'].to_f / summary['listings'].to_f * 100).round(1)}%"></i><strong>↓</strong></div><div class="water-row result"><span><b>Estabelecimentos estimados</b><small>metodologia #{h(summary['methodology_version'])}</small></span><i style="--bar:#{(summary['establishment_estimate'].to_f / summary['listings'].to_f * 100).round(1)}%"></i><strong>#{n(summary['establishment_estimate'])}</strong></div></div><p class="caption">Só as categorias previstas na metodologia como plausíveis para um mesmo estabelecimento são colapsadas.</p></div></section>
+    <section class="chapter chapter-paper"><div class="wrap split"><div><div class="eyebrow">07 · E onde estão?</div><h2 class="display display-medium">A cidade<br><em>não é uniforme.</em></h2><p class="hero-dek">Explore os resultados por freguesia. Os outputs publicados são agregados e não expõem coordenadas individuais.</p><a href="freguesias/index.html">Explorar todas as freguesias →</a></div><div class="lisbon-schematic"><div class="tejo-block"></div><div class="districts">#{top.map { |r| "<span>#{h(r['freguesia'])}</span>" }.join}</div><small>contagens agregadas</small></div></div><div class="compare">#{bars}</div></div></section>
+    <section class="chapter"><div class="wrap"><div class="eyebrow">08 · Então, quantos?</div><h2 class="display display-medium">Depende da pergunta<br><em>que estamos a fazer.</em></h2><div class="conclusion-grid"><div><div class="eyebrow">O número citado</div><strong>~11 000</strong><p>Um valor recorrente no debate público.</p></div><div><div class="eyebrow">O que observamos</div><strong>#{n(summary['listings'])}</strong><p>Anúncios no snapshot do Inside Airbnb.</p></div><div><div class="eyebrow">A estimativa</div><strong>#{n(summary['establishment_estimate'])}</strong><p>Estabelecimentos estimados pela metodologia.</p></div></div><p class="final-line">Não existe um único número que responda a todas as perguntas.</p></div></section>
+    <section class="method-strip"><div class="wrap footer-grid"><h2>Ver os dados.<br>Reproduzir a análise.</h2><p>Cada run conserva datas, URLs e hashes. Os outputs públicos são agregados e não expõem identificadores, endereços ou coordenadas exatas.</p><a href="metodologia.html">Abrir metodologia →</a></div></section><div>#{provenance(metadata, run_id)}</div>
+  HTML
+  shell("Quantos alojamentos locais existem realmente em Lisboa?", body)
+end
 
-    <section>
-      <h2>Objetivo</h2>
-      <p>O projeto compara snapshots de anúncios do Inside Airbnb em Lisboa com o registo oficial português de alojamento local. Publica contagens agregadas por freguesia e classificação, preservando a possibilidade de revisão metodológica sem divulgar anúncios individuais.</p>
-    </section>
+def freguesia_page(name, row, grouped, all_rows, metadata, run_id)
+  raw_name = name; name = pretty(name); total = row["listings"].to_i; current = grouped[raw_name] || counts([]); top = all_rows.sort_by { |r| -r["listings"].to_i }.first(7)
+  composition = LABELS.keys.filter_map { |key| data = current[key]; data && data[:listings] > 0 ? "<div class=\"composition-row\"><span>#{h(LABELS[key])}</span><strong>#{n(data[:listings])}</strong></div>" : nil }.join
+  table = LABELS.keys.filter_map { |key| data = current[key]; data ? "<tr data-name=\"#{h(LABELS[key])}\"><th>#{h(LABELS[key])}</th><td>#{n(data[:listings])}</td><td>#{n(data[:licences])}</td></tr>" : nil }.join
+  bars = top.map { |r| "<div class=\"compare-row #{r['freguesia'] == raw_name ? 'current' : ''}\"><span>#{h(pretty(r['freguesia']))}</span><i style=\"--bar:#{(r['listings'].to_f / top.first['listings'].to_f * 100).round(1)}%\"></i><strong>#{n(r['listings'])}</strong></div>" }.join
+  body = <<~HTML
+    <section class="district-hero lisbon-tile"><div class="wrap district-grid"><div><a href="../index.html">← Lisboa</a><div class="eyebrow chip">Freguesia · análise local</div><h1 class="display">O alojamento local<br><em>em #{h(name)}.</em></h1><p class="hero-dek">Uma leitura local dos anúncios observados, das licenças identificadas e dos sinais que merecem verificação.</p></div><div class="district-mark"><span>#{h(name.split.map { |w| w[0] }.join)}</span><b>#{n(total)}</b></div></div></section>
+    <section class="chapter chapter-paper"><div class="wrap"><div class="eyebrow">01 · A freguesia em números</div><div class="metric-grid"><div class="metric platform"><div class="metric-value">#{n(total)}</div><div class="metric-label">anúncios Airbnb</div></div><div class="metric official"><div class="metric-value">#{n(row['establishments_estimate'])}</div><div class="metric-label">estabelecimentos estimados</div></div><div class="metric official"><div class="metric-value">#{n(current.values.sum { |v| v[:licences] })}</div><div class="metric-label">licenças identificáveis</div></div></div></div></section>
+    <section class="chapter"><div class="wrap split"><div class="sticky-copy"><div class="eyebrow">02 · Composição</div><h2 class="display display-small">O que compõe<br>#{n(total)} anúncios?</h2><p>As categorias seguem a classificação da pipeline. “Sem licença identificável” não é uma conclusão de ilegalidade.</p></div><div class="composition">#{composition}</div></div></section>
+    <section class="chapter chapter-dark"><div class="wrap split"><div><div class="eyebrow light">03 · Distribuição espacial</div><h2 class="display display-small">Onde estão<br>os anúncios?</h2><p>Os outputs publicados preservam a privacidade e não expõem coordenadas individuais. Mostramos por isso a composição agregada.</p></div><div class="map-placeholder"><div class="map-grid">#{Array.new(42) { "<i></i>" }.join}</div><span>distribuição agregada<br>sem coordenadas públicas</span></div></div></section>
+    <section class="chapter chapter-paper"><div class="wrap"><div class="eyebrow">04 · Comparação com Lisboa</div><h2 class="display display-small">Uma leitura de escala,<br><em>não um ranking.</em></h2><div class="compare">#{bars}</div></div></section>
+    <section class="chapter"><div class="wrap"><div class="eyebrow">05 · Explorar os dados de #{h(name)}</div><h2 class="display display-small">Uma camada mais analítica.</h2><div class="data-controls"><button class="filter is-active" data-filter="all">Todas</button>#{LABELS.values.map { |label| "<button class=\"filter\" data-filter=\"#{h(label)}\">#{h(label.split.first(2).join(' '))}</button>" }.join}</div><div class="table-wrap"><table><thead><tr><th>Categoria</th><th>Anúncios</th><th>Licenças</th></tr></thead><tbody>#{table}</tbody></table></div><p class="caption">Consulte os <a href="../../runs/#{h(run_id)}/">ficheiros agregados do snapshot</a> e a <a href="../../metodologia.html">metodologia completa</a>.</p></div></section><div>#{provenance(metadata, run_id, '../../')}</div><script>document.querySelectorAll('.filter').forEach(function(b){b.onclick=function(){document.querySelectorAll('.filter').forEach(function(x){x.classList.remove('is-active')});b.classList.add('is-active');document.querySelectorAll('tbody tr').forEach(function(r){r.hidden=b.dataset.filter!='all'&&r.dataset.name!=b.dataset.filter})}})</script>
+  HTML
+  shell("O alojamento local em #{name}", body, "", "../../")
+end
 
-    <section>
-      <h2>Fontes e atribuição</h2>
-      <p>Os dados de anúncios provêm do <a href="https://insideairbnb.com/get-the-data/">Inside Airbnb</a>. O registo oficial é disponibilizado pelo <a href="https://www.turismodeportugal.pt/">Turismo de Portugal</a>. Cada run conserva URLs, datas e hashes das fontes no seu ficheiro <code>metadata.json</code>.</p>
-    </section>
+def freguesias_index(rows, metadata, run_id)
+  cards = rows.sort_by { |r| -r["listings"].to_i }.map { |r| "<a class=\"district-card\" href=\"#{slug(r['freguesia'])}/index.html\"><span class=\"shape-glyph\">#{h(pretty(r['freguesia']).split.map { |w| w[0] }.join)}</span><span class=\"eyebrow\">#{h(pretty(r['freguesia']))}</span><strong>#{n(r['listings'])}</strong><small>anúncios · #{n(r['establishments_estimate'])} estimados</small></a>" }.join
+  shell("Freguesias de Lisboa", "<section class=\"district-index-hero lisbon-tile\"><div class=\"wrap\"><div class=\"eyebrow chip\">Lisboa · #{rows.length} freguesias</div><h1 class=\"display\">E onde <em>estão?</em></h1><p class=\"hero-dek\">Uma leitura por freguesia dos anúncios observados e dos estabelecimentos estimados.</p></div></section><section class=\"chapter chapter-paper\"><div class=\"wrap\"><div class=\"district-list\">#{cards}</div></div></section><div>#{provenance(metadata, run_id, '../')}</div>", "", "../")
+end
 
-    <section>
-      <h2>Como ler os resultados</h2>
-      <p>A normalização de licenças é conservadora. As classificações distinguem, entre outros sinais, licenças únicas, possíveis anúncios múltiplos do mesmo estabelecimento, repetições na mesma localização, repetições em localizações distintas, registos oficiais fora de Lisboa e ausência de licença identificável.</p>
-      <p>Os dados publicados são agregados. Não incluem IDs de anúncios ou anfitriões, URLs de anúncios, nomes, endereços, coordenadas exatas, valores de licença originais ou texto arbitrário das fontes. A metodologia e exemplos sintéticos estão no relatório de cada run.</p>
-    </section>
+def methodology(metadata, summary, run_id)
+  body = "<section class=\"method-hero lisbon-tile\"><div class=\"wrap\"><div class=\"eyebrow chip\">Proveniência · transparência</div><h1 class=\"display\">Como contamos<br><em>o que contamos.</em></h1><p class=\"hero-dek\">A narrativa é uma camada sobre uma análise versionada. O método completo continua disponível para leitura e reprodução.</p></div></section><section class=\"chapter chapter-paper\"><div class=\"wrap method-grid\"><div><div class=\"eyebrow\">O que os dados significam</div><h2 class=\"display display-small\">Três contagens legítimas.</h2></div><div class=\"method-copy\"><p><strong>Registos oficiais</strong> são entradas no RNAL filtradas pelo concelho de Lisboa.</p><p><strong>Anúncios Airbnb</strong> são observações do snapshot do Inside Airbnb. Um anúncio pode representar uma unidade, um quarto ou parte de um estabelecimento.</p><p><strong>Estabelecimentos estimados</strong> resultam da classificação e deduplicação da pipeline. São uma estimativa analítica.</p></div></div></section><section class=\"chapter\" id=\"fontes\"><div class=\"wrap method-grid\"><div><div class=\"eyebrow\">Fontes e run</div><h2 class=\"display display-small\">Reproduzir é seguir as datas.</h2></div><div class=\"method-copy\"><dl><dt>Run</dt><dd>#{h(run_id)}</dd><dt>Airbnb</dt><dd>#{h(metadata['source_dates']['airbnb_snapshot_date'])} · <a href=\"#{h(metadata['source_urls']['airbnb'])}\">Inside Airbnb ↗</a></dd><dt>Registo</dt><dd>descarregado em #{h(metadata['source_dates']['official_register_download_date'])} · <a href=\"#{h(metadata['source_urls']['official'])}\">Turismo de Portugal / ArcGIS ↗</a></dd><dt>Versões</dt><dd>metodologia #{h(summary['methodology_version'])} · análise #{h(metadata['analysis_version'])}</dd></dl><p>Os outputs públicos são agregados: não incluem IDs, URLs, nomes, endereços, coordenadas exatas, valores de licença originais ou texto arbitrário das fontes.</p></div></div></section><section class=\"chapter chapter-dark\"><div class=\"wrap method-grid\"><div><div class=\"eyebrow light\">Linguagem e limites</div><h2 class=\"display display-small\">Sinais, não sentenças.</h2></div><div class=\"method-copy\"><p>“Sem licença identificável” significa que não foi possível reconhecer e normalizar uma licença no anúncio, não que o alojamento seja ilegal.</p><p>Uma licença repetida em localizações distintas é um padrão para verificação. Uma licença registada fora de Lisboa é uma divergência entre o local observado e o concelho oficial.</p></div></div></section><div>#{provenance(metadata, run_id)}</div>"
+  shell("Metodologia e proveniência", body)
+end
 
-    <section>
-      <h2>Runs publicados</h2>
-      <ul>#{run_links}</ul>
-    </section>
-
-    <section>
-      <h2>Limitações e correções</h2>
-      <p>Snapshots têm datas e coberturas diferentes; <code>last_scraped</code> é uma data ao nível do anúncio e pode abranger vários dias. Diferenças de formato, localização ou cobertura não demonstram uma infração. Para sugerir uma correção ou esclarecer um resultado, use os <a href="https://github.com/metade/Alojamento_Ilegal/issues">issues do projeto</a>.</p>
-      <p>O código de análise e os dados de origem detalhados podem permanecer privados; este site contém apenas os outputs sanitizados destinados a publicação.</p>
-    </section>
-
-    <footer>
-      <p>Último run publicado: #{html_escape(latest_metadata.fetch("run_id"))}. Versão da metodologia: #{html_escape(latest_metadata.fetch("methodology_version"))}.</p>
-      <p><a href="LICENSE">Licença do código</a> · <a href="NOTICE">Atribuição e avisos</a></p>
-    </footer>
-  </body>
-  </html>
-HTML
-
-File.write(File.join(SITE_DIR, "index.html"), index)
-FileUtils.cp(File.join(ROOT, "LICENSE"), File.join(SITE_DIR, "LICENSE"))
-FileUtils.cp(File.join(ROOT, "NOTICE"), File.join(SITE_DIR, "NOTICE"))
-puts "Site público criado em #{SITE_DIR} (#{snapshot_dirs.length} run(s))."
+dirs = Dir.children(SNAPSHOTS).map { |name| File.join(SNAPSHOTS, name) }.select { |path| File.directory?(path) }.sort.reverse
+abort "Não existem snapshots públicos em #{SNAPSHOTS}." if dirs.empty?
+FileUtils.rm_rf(SITE); FileUtils.mkdir_p(File.join(SITE, "assets")); File.write(File.join(SITE, "assets/story.css"), css + <<~TILE_CSS)
+  .lisbon-tile{--bg:#f3efe5;--stone:rgba(23,32,42,.035);--blue:rgba(23,107,135,.055);background-color:var(--bg);background-image:radial-gradient(circle at 0 0,transparent 47%,var(--stone) 48% 52%,transparent 53%),radial-gradient(circle at 100% 100%,transparent 47%,var(--stone) 48% 52%,transparent 53%),radial-gradient(circle at 100% 0,transparent 47%,var(--blue) 48% 50%,transparent 51%),radial-gradient(circle at 0 100%,transparent 47%,var(--blue) 48% 50%,transparent 51%);background-size:120px 120px}
+TILE_CSS
+dirs.each { |source| dest = File.join(SITE, "runs", File.basename(source)); FileUtils.mkdir_p(dest); PUBLIC_FILES.each { |file| FileUtils.cp(File.join(source, file), File.join(dest, file)) } }
+run_id = File.basename(dirs.first); run_dir = File.join(SITE, "runs", run_id); summary = JSON.parse(File.read(File.join(run_dir, "summary.json"))); metadata = JSON.parse(File.read(File.join(run_dir, "metadata.json"))); listings = CSV.read(File.join(run_dir, "listings.csv"), headers: true).map(&:to_h); freguesias = CSV.read(File.join(run_dir, "freguesias.csv"), headers: true).map(&:to_h); grouped = listings.group_by { |r| r["freguesia"] }.transform_values { |rows| counts(rows) }; quotes = File.exist?(QUOTES) ? JSON.parse(File.read(QUOTES)) : []
+File.write(File.join(SITE, "index.html"), home(summary, metadata, listings, freguesias, run_id, quotes)); FileUtils.mkdir_p(File.join(SITE, "freguesias")); File.write(File.join(SITE, "freguesias/index.html"), freguesias_index(freguesias, metadata, run_id)); freguesias.each { |row| dir = File.join(SITE, "freguesias", slug(row["freguesia"])); FileUtils.mkdir_p(dir); File.write(File.join(dir, "index.html"), freguesia_page(row["freguesia"], row, grouped, freguesias, metadata, run_id)) }; File.write(File.join(SITE, "metodologia.html"), methodology(metadata, summary, run_id)); FileUtils.cp(File.join(ROOT, "LICENSE"), File.join(SITE, "LICENSE")); FileUtils.cp(File.join(ROOT, "NOTICE"), File.join(SITE, "NOTICE")); puts "Site editorial criado em #{SITE} (#{freguesias.length} freguesias)."

@@ -23,6 +23,8 @@ class VersionedAnalysisTest < Minitest::Test
       assert_equal %w[metadata.json report.html summary.json listings.csv licence_groups.csv freguesias.csv].sort, Dir.children(run_dir).sort
       public_listings = CSV.read(File.join(run_dir, "listings.csv"), headers: true)
       assert_equal 2, public_listings.length
+      summary = JSON.parse(File.read(File.join(run_dir, "summary.json")))
+      assert_equal 1, summary.fetch("official_registers_lisbon")
       assert_equal AlIlegal::PUBLIC_CSV_SCHEMAS["listings.csv"], public_listings.headers
       refute_includes public_listings.headers, "host_id"
       refute public_listings.to_csv.match?(%r{https?://|/rooms/})
@@ -34,7 +36,7 @@ class VersionedAnalysisTest < Minitest::Test
       metadata = JSON.parse(File.read(File.join(run_dir, "metadata.json")))
       refute metadata.to_s.match?(/host_id|listing_url|licensa_raw|latitude|longitude|official_address/i)
       refute metadata.to_s.include?("path")
-      assert_equal "3.0.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
+      assert_equal "3.1.0", JSON.parse(File.read(File.join(run_dir, "metadata.json"))) ["output_schema_version"]
       report = File.read(File.join(run_dir, "report.html"))
       assert_operator report.length, :>, 1_000
       assert_includes report, "Exemplos ilustrativos"

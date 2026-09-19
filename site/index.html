@@ -1,65 +1,11 @@
-<!doctype html>
-<html lang="pt">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Alojamento Local em Lisboa — indicadores para verificação</title>
-  <style>
-    :root { color-scheme: light; --ink: #243447; --muted: #526579; --blue: #123b5d; --pale: #edf4f8; }
-    body { font: 1rem/1.6 system-ui, sans-serif; max-width: 900px; margin: auto; padding: 1rem; color: var(--ink); }
-    header { background: var(--blue); color: white; padding: 2rem; border-radius: 14px; }
-    h1 { margin-top: 0; line-height: 1.15; }
-    section { margin: 2rem 0; }
-    .notice { border-left: 5px solid #d38b22; background: #fff7e8; padding: 1rem 1.25rem; }
-    .meta { color: var(--muted); }
-    a { color: #075a91; }
-    li { margin: .65rem 0; }
-    footer { border-top: 1px solid #d9e2e8; padding-top: 1rem; color: var(--muted); font-size: .9rem; }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Alojamento Local em Lisboa</h1>
-    <p>Comparação de snapshots públicos para identificar indicadores que requerem verificação.</p>
-    <p>Último run: <a href="runs/2026-06-23__2026-09-18/report.html" style="color:#fff">2026-06-23__2026-09-18</a></p>
-  </header>
-
-  <section class="notice">
-    <strong>Importante:</strong> os resultados são indicadores analíticos, não conclusões de ilegalidade, culpa ou incumprimento. Qualquer divergência deve ser confirmada junto das fontes oficiais.
-  </section>
-
-  <section>
-    <h2>Objetivo</h2>
-    <p>O projeto compara snapshots de anúncios do Inside Airbnb em Lisboa com o registo oficial português de alojamento local. Publica contagens agregadas por freguesia e classificação, preservando a possibilidade de revisão metodológica sem divulgar anúncios individuais.</p>
-  </section>
-
-  <section>
-    <h2>Fontes e atribuição</h2>
-    <p>Os dados de anúncios provêm do <a href="https://insideairbnb.com/get-the-data/">Inside Airbnb</a>. O registo oficial é disponibilizado pelo <a href="https://www.turismodeportugal.pt/">Turismo de Portugal</a>. Cada run conserva URLs, datas e hashes das fontes no seu ficheiro <code>metadata.json</code>.</p>
-  </section>
-
-  <section>
-    <h2>Como ler os resultados</h2>
-    <p>A normalização de licenças é conservadora. As classificações distinguem, entre outros sinais, licenças únicas, possíveis anúncios múltiplos do mesmo estabelecimento, repetições na mesma localização, repetições em localizações distintas, registos oficiais fora de Lisboa e ausência de licença identificável.</p>
-    <p>Os dados publicados são agregados. Não incluem IDs de anúncios ou anfitriões, URLs de anúncios, nomes, endereços, coordenadas exatas, valores de licença originais ou texto arbitrário das fontes. A metodologia e exemplos sintéticos estão no relatório de cada run.</p>
-  </section>
-
-  <section>
-    <h2>Runs publicados</h2>
-    <ul><li><a href="runs/2026-06-23__2026-09-18/report.html">2026-06-23__2026-09-18</a>
-  <span>(Airbnb: 2026-06-23; registo descarregado em 2026-09-18)</span></li>
-</ul>
-  </section>
-
-  <section>
-    <h2>Limitações e correções</h2>
-    <p>Snapshots têm datas e coberturas diferentes; <code>last_scraped</code> é uma data ao nível do anúncio e pode abranger vários dias. Diferenças de formato, localização ou cobertura não demonstram uma infração. Para sugerir uma correção ou esclarecer um resultado, use os <a href="https://github.com/metade/Alojamento_Ilegal/issues">issues do projeto</a>.</p>
-    <p>O código de análise e os dados de origem detalhados podem permanecer privados; este site contém apenas os outputs sanitizados destinados a publicação.</p>
-  </section>
-
-  <footer>
-    <p>Último run publicado: 2026-06-23__2026-09-18. Versão da metodologia: 1.0.0.</p>
-    <p><a href="LICENSE">Licença do código</a> · <a href="NOTICE">Atribuição e avisos</a></p>
-  </footer>
-</body>
-</html>
+<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Uma investigação de dados sobre o alojamento local em Lisboa."><title>Quantos alojamentos locais existem realmente em Lisboa? · AL em análise</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/story.css"></head><body><a class="skip-link" href="#conteudo">Saltar para o conteúdo</a><header class="site-header"><div class="wrap header-inner"><a class="brand" href="index.html"><span class="al-mark">AL</span><span><strong>AL em análise</strong><small>Lisboa · dados &amp; investigação</small></span></a><nav aria-label="Navegação principal"><a class="nav-link" href="index.html">Investigação</a><a class="nav-link" href="freguesias/index.html">Freguesias</a><a class="nav-link" href="metodologia.html">Metodologia</a></nav></div></header><div class="tile-rule"></div><main id="conteudo"><section class="hero lisbon-tile"><div class="wrap hero-grid"><div><div class="eyebrow chip">Lisboa · uma investigação de dados</div><h1 class="display">Quantos alojamentos locais existem <em>realmente</em> em Lisboa?</h1><p class="hero-dek">É comum encontrar um número próximo dos <strong>11 mil</strong>. Mas registos, anúncios e estabelecimentos não são a mesma coisa.</p><p class="scroll-cue">↓ Desça para seguir a contagem</p></div><div class="hero-number"><span>11 000</span><b>?</b></div></div><div class="wrap tejo-line"><span>Lisboa · Tejo</span></div></section>
+<section class="chapter chapter-paper"><div class="wrap"><div class="eyebrow">01 · O que se diz</div><h2 class="display display-medium">O número aparece.<br><em>A pergunta fica.</em></h2><div class="quote-grid"><div class="empty-source"><span class="quote-mark">“</span><span>Arquivo editorial preparado para citações verificadas.</span><a href="metodologia.html#fontes">Como tratamos as fontes →</a></div></div></div></section>
+<section class="chapter" id="investigacao"><div class="wrap"><div class="chapter-intro"><div><div class="eyebrow">02 · As três perspectivas</div><h2 class="display display-medium">O mesmo número.<br><em>Coisas diferentes.</em></h2></div><p>Antes de contar, precisamos de perceber o que cada fonte está a medir. A investigação cruza o discurso público, o registo oficial e os anúncios observados.</p></div><div class="source-grid"><article class="source-card"><div class="eyebrow">O que se diz</div><div class="source-symbol">“</div><h3>Notícias<br>e declarações</h3><p>Um enquadramento editorial, não uma contagem produzida por esta investigação.</p></article><article class="source-card"><div class="eyebrow">Registo oficial</div><div class="source-symbol">↓</div><h3>11 865</h3><p>registos no concelho de Lisboa</p><small>Turismo de Portugal · RNAL</small></article><article class="source-card platform"><div class="eyebrow">Airbnb</div><div class="source-symbol">●</div><h3>17 064</h3><p>anúncios no snapshot</p><small>Inside Airbnb · 2026-06-23</small></article></div></div></section>
+<section class="chapter"><div class="wrap split"><div class="sticky-copy"><div class="eyebrow">03 · O primeiro problema</div><h2 class="display display-small">17 064 anúncios não são 17 064 alojamentos.</h2><p>O mesmo estabelecimento pode aparecer várias vezes. A análise agrupa anúncios com a mesma licença e na mesma localização, mas mantém separados os sinais que merecem investigação.</p></div><div class="diagram"><div class="diagram-label">Exemplo sintético · uma licença, vários anúncios</div><div class="listing-stack"><span>Quarto 1 <b>AL 67890</b></span><span>Quarto 2 <b>AL 67890</b></span><span>Quarto 3 <b>AL 67890</b></span></div><div class="diagram-arrow">↓</div><div class="establishment"><b>AL 67890</b><strong>1 provável estabelecimento?</strong><small>3 anúncios Airbnb</small></div><p class="caption">Uma estimativa analítica, não uma confirmação de identidade física.</p></div></div></section>
+<section class="chapter chapter-paper"><div class="wrap"><div class="eyebrow">04 · O cruzamento</div><h2 class="display display-medium">Dois universos.<br><em>Uma ligação imperfeita.</em></h2><div class="cross-grid"><div class="cross-column"><span class="eyebrow">Turismo de Portugal</span><div>licença reconhecida</div><div>licença repetida</div><div>concelho oficial</div></div><div class="cross-lines">←────→<br>←─┬──→<br>  └──→</div><div class="cross-column platform-border"><span class="eyebrow">Airbnb</span><div>anúncio</div><div>quarto 1 · quarto 2</div><div>localização observada</div></div></div><p class="hero-dek">O número de licença é uma chave útil, mas não resolve sozinho a diferença entre anúncio, unidade e estabelecimento.</p></div></section>
+<section class="chapter chapter-dark"><div class="wrap"><div class="dark-intro"><div><div class="eyebrow light">05 · Mas há anúncios que não encaixam</div><h2 class="display display-medium">Sinais para investigar.<br><em>Não conclusões automáticas.</em></h2></div><p>Ao cruzar Airbnb e RNAL, aparecem diferenças que precisam de confirmação. A linguagem é deliberadamente conservadora.</p></div><div class="finding-grid"><article class="finding"><div class="finding-number">4 338</div><div><div class="finding-mark">?</div><h3>Sem licença identificável</h3><p>O anúncio não apresenta um número que consigamos reconhecer e normalizar como licença de AL.</p></div></article><article class="finding"><div class="finding-number">813</div><div><div class="finding-mark">↻</div><h3>Licença repetida em diferentes localizações</h3><p>O mesmo número aparece associado a anúncios geograficamente separados.</p></div></article><article class="finding"><div class="finding-number">569</div><div><div class="finding-mark">⌖</div><h3>Licença registada fora de Lisboa</h3><p>O anúncio está no dataset de Lisboa, mas o registo identificado pertence a outro concelho.</p></div></article></div><p class="notice-dark"><strong>Importante:</strong> são sinais para verificação. Não demonstram, por si só, ilegalidade, culpa ou incumprimento.</p></div></section>
+<section class="chapter"><div class="wrap"><div class="eyebrow">06 · Construir uma estimativa</div><h2 class="display display-medium">Em vez de escolher um número,<br><em>mostramos como chegamos até ele.</em></h2><div class="waterfall"><div class="water-row"><span>Anúncios Airbnb</span><i style="--bar:100%"></i><strong>17 064</strong></div><div class="water-row"><span>Agrupar categorias colapsáveis</span><i style="--bar:82.6%"></i><strong>↓</strong></div><div class="water-row result"><span><b>Estabelecimentos estimados</b><small>metodologia 1.0.0</small></span><i style="--bar:82.6%"></i><strong>14 103</strong></div></div><p class="caption">Só as categorias previstas na metodologia como plausíveis para um mesmo estabelecimento são colapsadas.</p></div></section>
+<section class="chapter chapter-paper"><div class="wrap split"><div><div class="eyebrow">07 · E onde estão?</div><h2 class="display display-medium">A cidade<br><em>não é uniforme.</em></h2><p class="hero-dek">Explore os resultados por freguesia. Os outputs publicados são agregados e não expõem coordenadas individuais.</p><a href="freguesias/index.html">Explorar todas as freguesias →</a></div><div class="lisbon-schematic"><div class="tejo-block"></div><div class="districts"><span>Santa Maria Maior</span><span>Misericrdia</span><span>Arroios</span><span>Santo Antnio</span><span>So Vicente</span></div><small>contagens agregadas</small></div></div><div class="compare"><div class="compare-row"><span>Santa Maria Maior</span><i style="--bar:100.0%"></i><strong>3 572</strong></div><div class="compare-row"><span>Misericórdia</span><i style="--bar:72.5%"></i><strong>2 588</strong></div><div class="compare-row"><span>Arroios</span><i style="--bar:60.3%"></i><strong>2 154</strong></div><div class="compare-row"><span>Santo António</span><i style="--bar:41.6%"></i><strong>1 486</strong></div><div class="compare-row"><span>São Vicente</span><i style="--bar:35.0%"></i><strong>1 250</strong></div></div></div></section>
+<section class="chapter"><div class="wrap"><div class="eyebrow">08 · Então, quantos?</div><h2 class="display display-medium">Depende da pergunta<br><em>que estamos a fazer.</em></h2><div class="conclusion-grid"><div><div class="eyebrow">O número citado</div><strong>~11 000</strong><p>Um valor recorrente no debate público.</p></div><div><div class="eyebrow">O que observamos</div><strong>17 064</strong><p>Anúncios no snapshot do Inside Airbnb.</p></div><div><div class="eyebrow">A estimativa</div><strong>14 103</strong><p>Estabelecimentos estimados pela metodologia.</p></div></div><p class="final-line">Não existe um único número que responda a todas as perguntas.</p></div></section>
+<section class="method-strip"><div class="wrap footer-grid"><h2>Ver os dados.<br>Reproduzir a análise.</h2><p>Cada run conserva datas, URLs e hashes. Os outputs públicos são agregados e não expõem identificadores, endereços ou coordenadas exatas.</p><a href="metodologia.html">Abrir metodologia →</a></div></section><div><div class="provenance">Dados Airbnb: <strong>2026-06-23</strong> · registo descarregado: <strong>2026-09-18</strong> · <a href="runs/2026-06-23__2026-09-18/report.html">relatório técnico</a></div></div>
+</main><footer class="site-footer"><div class="wrap footer-grid"><span>Alojamento Local em Análise</span><span>Dados públicos · indicadores para verificação</span><a href="metodologia.html">Metodologia →</a></div></footer></body></html>
