@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "date": "21 dez 2023",
+    "sort_date": "2023-12-21",
+    "excerpt": "Lisboa, supostamente, tinha 20 mil alojamentos locais em funcionamento e agora sabemos que são metade.",
+    "person": "Carlos Moedas",
+    "source": "Time Out Lisboa",
+    "url": "https://www.timeout.pt/lisboa/pt/noticias/licencas-de-alojamento-local-deviam-ser-canceladas-mas-camara-de-lisboa-diz-nao-ter-capacidade-122123"
+  },
+  {
+    "date": "21 dez 2023",
+    "sort_date": "2023-12-21",
+    "excerpt": "Não há possibilidade de saber a realidade que verdadeiramente acontece no território.",
+    "person": "Joana Almeida",
+    "source": "Time Out Lisboa",
+    "url": "https://www.timeout.pt/lisboa/pt/noticias/licencas-de-alojamento-local-deviam-ser-canceladas-mas-camara-de-lisboa-diz-nao-ter-capacidade-122123"
+  },
+  {
+    "date": "2026",
+    "sort_date": "2026-02-20",
+    "excerpt": "Passámos de cerca de 500 unidades de Alojamento Local para aproximadamente 20 mil.",
+    "person": "Carlos Moedas",
+    "source": "Câmara Municipal de Lisboa",
+    "url": "https://informacao.lisboa.pt/noticias/detalhe/autarquia-cancela-40-dos-registos-de-alojamento-local-inativos"
+  }
+]
